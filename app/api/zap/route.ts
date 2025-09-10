@@ -6,12 +6,13 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("hub.verify_token");
 
   const verifyToken = process.env.VERIFY_TOKEN; // set in .env.local
-
+  console.log(verifyToken);
+  console.log(token);
   if (mode === "subscribe" && token === verifyToken) {
     console.log("WEBHOOK VERIFIED");
-    return NextResponse.json(challenge, { status: 200 });
+    return new NextResponse(challenge, { status: 200 });
   } else {
-    return NextResponse.json("Forbidden", { status: 403 });
+    return new NextResponse("Forbidden", { status: 403 });
   }
 }
 
