@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (from) {
       console.log("Message sent from number:", from);
-      sendMessage(from);
+      await sendMessage(from);
     } else {
       console.log("No 'from' field found in the message.");
     }
