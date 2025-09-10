@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const challenge = req.nextUrl.searchParams.get("hub.challenge");
   const token = req.nextUrl.searchParams.get("hub.verify_token");
 
-  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN; // set in .env.local
+  const verifyToken = process.env.VERIFY_TOKEN; // set in .env.local
 
   if (mode === "subscribe" && token === verifyToken) {
     console.log("WEBHOOK VERIFIED");
