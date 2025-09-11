@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
       users.data.forEach((user) => {
         console.log("metadata", user.publicMetadata);
         console.log("from", from);
+        const f = new String(from);
+        console.log("comparison", f === user.publicMetadata.whatsappNumber);
       });
-      const user = users.data.find((user) => {
-        console.log(user.publicMetadata.whatasppNumber, from);
-        if (user.publicMetadata.whatasppNumber === from) {
-          return user;
-        }
-      });
+      const user = users.data.find(
+        (user) => user.publicMetadata.whatsappNumber === from
+      );
+      console.log(user);
       if (user) {
         const clarkResponse = await client.users.getUserOauthAccessToken(
           user.id,
