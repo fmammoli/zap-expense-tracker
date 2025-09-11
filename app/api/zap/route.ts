@@ -21,6 +21,81 @@ export async function GET(req: NextRequest) {
   }
 }
 
+async function addNewRegister(whatsappNumber: string, messageBody: string) {
+  const client = await clerkClient();
+
+  const users = await client.users.getUserList();
+  const user = users.data.find(
+    (user) => user.publicMetadata.whatsappNumber === whatsappNumber
+  );
+
+  if (!user) {
+    //Should send a message suggesting log in on google
+    throw new Error("No user found with this whatsapp number");
+  }
+
+  const clarkResponse = await client.users.getUserOauthAccessToken(
+    user.id,
+    "google"
+  );
+
+  const token = clarkResponse.data[0].token || "";
+  const googleAuthClient = new google.auth.OAuth2();
+  googleAuthClient.setCredentials({ access_token: token });
+
+  const drive = google.drive({ version: "v3", auth: googleAuthClient });
+  const sheets = google.sheets({
+    version: "v4",
+    auth: googleAuthClient,
+  });
+
+  // 🔍 Step 1: Search for a spreadsheet named "system-sheet"
+  const search = await drive.files.list({
+    q: "name='minhas-contas-app' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+    fields: "files(id, name)",
+    spaces: "drive",
+  });
+
+  let spreadsheetId: string = "";
+
+  if (!search.data.files || search.data.files.length === 0) {
+    throw new Error("No spreadsheet found with this name");
+  }
+
+  spreadsheetId = search.data.files[0].id as string;
+  console.log("Found existing spreadsheet:", spreadsheetId);
+
+  const resp = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheetTitle = resp.data.sheets?.[0].properties?.title;
+
+  const llmResponse = await parseMessageWithGemini(messageBody);
+
+  if (llmResponse) {
+    // This is the table format
+    //   A1       B1      C1.     D1         E1.          F1
+    //["Data", "Valor", "Tipo", "Quem", "Categoria", "Descrição"]
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetTitle}!A1:F1`,
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [
+          [
+            new Date().toLocaleDateString("pt-BR"),
+            llmResponse.valor,
+            llmResponse.tipo,
+            `${user.firstName} ${user.lastName}`,
+            llmResponse.categoria,
+            llmResponse.descricao,
+          ],
+        ],
+      },
+    });
+    return { newRegister: llmResponse, user: user };
+  }
+  throw new Error("LLM could not parse the message");
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -28,104 +103,29 @@ export async function POST(req: NextRequest) {
   console.log(`\n\nWebhook received ${timestamp}\n`);
   console.log(JSON.stringify(body, null, 2));
 
+  const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+  const messageBody =
+    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
+
+  if (!from || !messageBody) {
+    console.log("No 'from' or 'messageBody' field found in the message.");
+    return new NextResponse(null, { status: 200 });
+  }
+
   try {
-    const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
-    const messageBody =
-      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
-
-    if (from) {
-      const client = await clerkClient();
-
-      const users = await client.users.getUserList();
-      users.data.forEach((user) => {
-        console.log("metadata", user.publicMetadata);
-        console.log("from", from);
-        const f = new String(from);
-        console.log("comparison", f === user.publicMetadata.whatsappNumber);
-      });
-      const user = users.data.find(
-        (user) => user.publicMetadata.whatsappNumber === from
-      );
-      console.log(user);
-      if (user) {
-        const clarkResponse = await client.users.getUserOauthAccessToken(
-          user.id,
-          "google"
-        );
-        const token = clarkResponse.data[0].token || "";
-        console.log(clarkResponse.data[0]);
-        const googleAuthClient = new google.auth.OAuth2();
-        googleAuthClient.setCredentials({ access_token: token });
-
-        const drive = google.drive({ version: "v3", auth: googleAuthClient });
-        const sheets = google.sheets({
-          version: "v4",
-          auth: googleAuthClient,
-        });
-
-        // 🔍 Step 1: Search for a spreadsheet named "system-sheet"
-        const search = await drive.files.list({
-          q: "name='minhas-contas-app' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
-          fields: "files(id, name)",
-          spaces: "drive",
-        });
-
-        let spreadsheetId: string = "";
-
-        if (search.data.files && search.data.files.length > 0) {
-          spreadsheetId = search.data.files[0].id || "";
-          console.log("Found existing spreadsheet:", spreadsheetId);
-
-          const resp = await sheets.spreadsheets.get({ spreadsheetId });
-          const sheetTitle = resp.data.sheets?.[0].properties?.title;
-          console.log("Sheet title:", sheetTitle);
-
-          if (messageBody) {
-            const llmResponse = await parseMessageWithGemini(messageBody);
-
-            if (llmResponse) {
-              // This is the table format
-              //   A1       B1      C1.     D1         E1.          F1
-              //["Data", "Valor", "Tipo", "Quem", "Categoria", "Descrição"]
-              await sheets.spreadsheets.values.append({
-                spreadsheetId,
-                range: `${sheetTitle}!A1:F1`,
-                valueInputOption: "RAW",
-                requestBody: {
-                  values: [
-                    [
-                      new Date().toLocaleDateString("pt-BR"),
-                      llmResponse.valor,
-                      llmResponse.tipo,
-                      `${user.firstName} ${user.lastName}`,
-                      llmResponse.categoria,
-                      llmResponse.descricao,
-                    ],
-                  ],
-                },
-              });
-              const bodyText = `
+    const response = await addNewRegister(from, messageBody);
+    const bodyText = `
               Mensagem registrada!\n
-              ${user.firstName} ${user.lastName}\n
-              Tipo: ${llmResponse.tipo}\n
-              Valor: \$ ${llmResponse.valor}\n
-              Categoria: ${llmResponse.categoria}\n
-              Descrição: ${llmResponse.descricao}\n
+              ${response.user.firstName} ${response.user.lastName}\n
+              Tipo: ${response.newRegister.tipo}\n
+              Valor: \$ ${response.newRegister.valor}\n
+              Categoria: ${response.newRegister.categoria}\n
+              Descrição: ${response.newRegister.descricao}\n
               `;
-              await sendMessage(from, bodyText);
-            }
-          }
-        }
-      } else {
-        console.log("Message sent from number:", from);
-        const bodyText = `Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard?whatsappNumber=${from}`;
-        await sendMessage(from, bodyText);
-      }
-    } else {
-      console.log("No 'from' field found in the message.");
-    }
-  } catch (err) {
-    console.error("Error extracting sender number:", err);
+    await sendMessage(from, bodyText);
+  } catch (error) {
+    const message = `Something went wrong adding the message: ${error}`;
+    return new NextResponse(message, { status: 200 });
   }
 
   // Always respond 200 so WhatsApp knows delivery worked
