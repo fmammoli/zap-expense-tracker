@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
               ],
             },
           });
-          const bodyText = `Achei o usuário!`;
+          const bodyText = `Mensagem registrada na sua google spreadsheet!`;
           await sendMessage(from, bodyText);
         }
       } else {
