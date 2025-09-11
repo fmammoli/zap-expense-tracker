@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         }
       } else {
         console.log("Message sent from number:", from);
-        const bodyText = `Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard?whatasppNumber=${from}`;
+        const bodyText = `Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard?whatsappNumber=${from}`;
         await sendMessage(from, bodyText);
       }
     } else {
