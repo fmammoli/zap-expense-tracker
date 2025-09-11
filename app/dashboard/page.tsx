@@ -34,15 +34,18 @@ export default async function Page() {
     if (search.data.files && search.data.files.length === 0) {
       //Create sheet if not found
       const response = await sheets.spreadsheets.create({
-        requestBody: { properties: { title: "minhas-contas-app" } },
+        requestBody: {
+          properties: { title: "minhas-contas-app" },
+          sheets: [{ properties: { title: "Extrato" } }],
+        },
       });
       spreadsheetId = response.data.spreadsheetId || "";
-      const sheet1Title = response.data.sheets?.[0].properties?.title;
+      const sheetTitle = response.data.sheets?.[0].properties?.title;
       console.log("Created new spreadsheet:", spreadsheetId);
 
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${sheet1Title}!A1:C1`,
+        range: `${sheetTitle}!A1:C1`,
         valueInputOption: "RAW",
         requestBody: {
           values: [["Data", "Amount", "Description"]],
