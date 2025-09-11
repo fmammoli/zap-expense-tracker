@@ -42,7 +42,11 @@ export default function RootLayout({
         >
           <header className="flex justify-end items-center p-4 gap-4 h-16">
             <SignedOut>
-              <SignInButton />
+              <SignInButton
+                fallbackRedirectUrl={
+                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL
+                }
+              />
               <SignUpButton>
                 <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
                   Sign Up
@@ -50,7 +54,16 @@ export default function RootLayout({
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <UserButton />
+              <UserButton
+                userProfileProps={{
+                  additionalOAuthScopes: {
+                    google: [
+                      "https://www.googleapis.com/auth/drive.file",
+                      "https://www.googleapis.com/auth/spreadsheets",
+                    ],
+                  },
+                }}
+              />
             </SignedIn>
           </header>
           {children}
