@@ -1,10 +1,12 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { google } from "googleapis";
 
-export default async function Page(searchParams: {
-  [key: string]: string | string[] | undefined;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  console.log("Search params:", searchParams);
+  const whatsappNumber = (await searchParams).whatsappNumber as string;
   const user = await auth();
   const userId = user.userId;
   let spreadsheetId: string = "";
@@ -14,7 +16,7 @@ export default async function Page(searchParams: {
     const client = await clerkClient();
 
     await client.users.updateUserMetadata(userId, {
-      publicMetadata: { whatsappNumber: searchParams.whatsappNumber || "" },
+      publicMetadata: { whatsappNumber: whatsappNumber || "" },
     });
 
     const clarkResponse = await client.users.getUserOauthAccessToken(
@@ -98,7 +100,7 @@ export default async function Page(searchParams: {
         >
           Open system-sheet
         </a>
-        <p>{JSON.stringify(searchParams, null, 2)}</p>
+        <p>Whatsapp Number: {whatsappNumber}</p>
       </div>
     </div>
   );
