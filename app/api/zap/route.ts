@@ -21,6 +21,40 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function POST2(req: NextRequest) {
+  const body = await req.json();
+
+  const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+  const messageBody =
+    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
+
+  const senderName = body.entry?.[0]?.changes?.[0]?.contacts?.[0]?.profile.name;
+
+  if (!from) {
+    console.log("No 'from' field found in the message.");
+    return new NextResponse(null, { status: 200 });
+  }
+  if (!messageBody) {
+    console.log("No 'messageBody' field found in the message.");
+    return new NextResponse(null, { status: 200 });
+  }
+
+  const response = await parseNewRegisterWithGemini(messageBody);
+
+  const bodyText = `
+              Mensagem registrada!\n
+              ${senderName}\n
+              Tipo: ${response.tipo}\n
+              Valor: \$ ${response.valor}\n
+              Categoria: ${response.categoria}\n
+              Descrição: ${response.descricao}\n
+              `;
+  await sendMessage(from, bodyText);
+
+  // Always respond 200 so WhatsApp knows delivery worked
+  return new NextResponse(null, { status: 200 });
+}
+
 async function addNewRegister(whatsappNumber: string, messageBody: string) {
   const client = await clerkClient();
 
@@ -68,7 +102,7 @@ async function addNewRegister(whatsappNumber: string, messageBody: string) {
   const resp = await sheets.spreadsheets.get({ spreadsheetId });
   const sheetTitle = resp.data.sheets?.[0].properties?.title;
 
-  const llmResponse = await parseMessageWithGemini(messageBody);
+  const llmResponse = await parseNewRegisterWithGemini(messageBody);
 
   if (llmResponse) {
     // This is the table format
@@ -193,7 +227,7 @@ Regras:
 - Se a mensagem não descrever uma transação financeira, retorne todos os campos como null.
 `;
 
-async function parseMessageWithGemini(message: string) {
+async function parseNewRegisterWithGemini(message: string) {
   if (!GEMINI_API_KEY) {
     return;
   }
