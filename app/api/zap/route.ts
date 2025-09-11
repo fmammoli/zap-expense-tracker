@@ -46,7 +46,7 @@ async function sendMessage(to: string) {
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; // set in .env.local
 
   const bodyText =
-    "Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/sign-in";
+    "Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard";
 
   try {
     const response = await fetch(
