@@ -8,9 +8,15 @@ export default async function Page(searchParams: {
   const user = await auth();
   const userId = user.userId;
   let spreadsheetId: string = "";
+
   if (userId) {
     const provider = "google";
     const client = await clerkClient();
+
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { whatasppNumber: searchParams.phone || "" },
+    });
+
     const clarkResponse = await client.users.getUserOauthAccessToken(
       userId,
       provider
@@ -55,6 +61,7 @@ export default async function Page(searchParams: {
         },
       });
     } else {
+      //Found spreadsheet id
       spreadsheetId = search.data.files![0].id || "";
       console.log("Found spreadsheet:", spreadsheetId);
       const resp = await sheets.spreadsheets.get({ spreadsheetId });
