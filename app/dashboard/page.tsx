@@ -43,6 +43,8 @@ export default async function Page({
     });
 
     if (search.data.files && search.data.files.length === 0) {
+      //So here I send a message to the user on whatsapp asking if he wants to create a new spreadsheet or link to an existing one
+
       //Create sheet if not found
       const response = await sheets.spreadsheets.create({
         requestBody: {
@@ -56,10 +58,12 @@ export default async function Page({
 
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${sheetTitle}!A1:C1`,
+        range: `${sheetTitle}!A1:F1`,
         valueInputOption: "RAW",
         requestBody: {
-          values: [["Data", "Amount", "Description"]],
+          values: [
+            ["Data", "Valor", "Tipo", "Quem", "Categoria", "Description"],
+          ],
         },
       });
     } else {

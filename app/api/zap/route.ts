@@ -1,6 +1,8 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { GoogleGenAI, Type } from "@google/genai";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get("hub.mode");
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
           "google"
         );
         const token = clarkResponse.data[0].token || "";
-
+        console.log(clarkResponse.data[0]);
         const googleAuthClient = new google.auth.OAuth2();
         googleAuthClient.setCredentials({ access_token: token });
 
@@ -78,22 +80,41 @@ export async function POST(req: NextRequest) {
           const sheetTitle = resp.data.sheets?.[0].properties?.title;
           console.log("Sheet title:", sheetTitle);
 
-          await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: `${sheetTitle}!A1:C1`,
-            valueInputOption: "RAW",
-            requestBody: {
-              values: [
-                [
-                  new Date().toLocaleDateString(),
-                  Math.random() * 100,
-                  messageBody || "no body",
-                ],
-              ],
-            },
-          });
-          const bodyText = `Mensagem registrada na sua google spreadsheet!`;
-          await sendMessage(from, bodyText);
+          if (messageBody) {
+            const llmResponse = await parseMessageWithGemini(messageBody);
+
+            if (llmResponse) {
+              // This is the table format
+              //   A1       B1      C1.     D1         E1.          F1
+              //["Data", "Valor", "Tipo", "Quem", "Categoria", "Descrição"]
+              await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: `${sheetTitle}!A1:F1`,
+                valueInputOption: "RAW",
+                requestBody: {
+                  values: [
+                    [
+                      new Date().toLocaleDateString("pt-BR"),
+                      llmResponse.valor,
+                      llmResponse.tipo,
+                      `${user.firstName} ${user.lastName}`,
+                      llmResponse.categoria,
+                      llmResponse.descricao,
+                    ],
+                  ],
+                },
+              });
+              const bodyText = `
+              Mensagem registrada!\n
+              ${user.firstName} ${user.lastName}\n
+              Tipo: ${llmResponse.tipo}\n
+              Valor: \$ ${llmResponse.valor}\n
+              Categoria: ${llmResponse.categoria}\n
+              Descrição: ${llmResponse.descricao}\n
+              `;
+              await sendMessage(from, bodyText);
+            }
+          }
         }
       } else {
         console.log("Message sent from number:", from);
@@ -144,5 +165,66 @@ async function sendMessage(to: string, bodyText: string) {
   } catch (err) {
     console.error("Error sending WhatsApp message:", err);
     return NextResponse.json({ success: false, error: err }, { status: 500 });
+  }
+}
+
+const systemPrompt = `
+Você é um analisador de transações financeiras pessoais.  
+Sua tarefa é extrair dados estruturados de mensagens curtas do WhatsApp sobre finanças.  
+
+- Entrada: uma mensagem em linguagem natural (ex.: "Uber 23,50", "Salário 5000", "Almoço 45", "Netflix 39,90", "Recebi 200").  
+- Saída: JSON com os seguintes campos:
+  {
+    "tipo": "despesa" | "receita" | null,
+    "descricao": string | null,
+    "valor": number | null,
+    "moeda": string | null,
+    "categoria": string | null
+  }
+
+Regras:
+- Identifique se é uma DESPESA ou RECEITA.
+- Se não houver moeda, usar "BRL".
+- Deduzir categoria a partir da descrição:
+  - Despesas: alimentação, transporte, compras, entretenimento, aluguel, contas, saúde, educação, outros.  
+  - Receitas: salário, presente, investimento, reembolso, outros.  
+- A categoria deve sempre ser preenchida se for despesa ou receita.
+- Retorne somente JSON válido, sem explicações extras.
+- Se a mensagem não descrever uma transação financeira, retorne todos os campos como null.
+`;
+
+async function parseMessageWithGemini(message: string) {
+  if (!GEMINI_API_KEY) {
+    return;
+  }
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash-lite",
+    contents: message,
+    config: {
+      systemInstruction: systemPrompt,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          tipo: { type: Type.STRING },
+          descricao: { type: Type.STRING },
+          valor: { type: Type.NUMBER },
+          moeda: { type: Type.STRING },
+          categoria: { type: Type.STRING },
+        },
+        required: ["tipo", "descricao", "valor", "moeda", "categoria"],
+      },
+    },
+  });
+  console.log("!!!!!!!!!!LLM RESPONSE!!!!!!!!!!");
+  const responseText = response.candidates?.[0].content?.parts?.[0].text;
+  console.log(responseText);
+  if (responseText) {
+    const jsonData = await JSON.parse(responseText);
+    return jsonData;
+  } else {
+    return null;
   }
 }
