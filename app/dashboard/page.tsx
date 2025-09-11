@@ -1,7 +1,10 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { google } from "googleapis";
 
-export default async function Page() {
+export default async function Page(searchParams: {
+  [key: string]: string | string[] | undefined;
+}) {
+  console.log("Search params:", searchParams);
   const user = await auth();
   const userId = user.userId;
   let spreadsheetId: string = "";
@@ -88,6 +91,7 @@ export default async function Page() {
         >
           Open system-sheet
         </a>
+        <p>{JSON.stringify(searchParams, null, 2)}</p>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -23,7 +24,9 @@ export async function POST(req: NextRequest) {
   const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
   console.log(`\n\nWebhook received ${timestamp}\n`);
   console.log(JSON.stringify(body, null, 2));
-
+  const user = await auth();
+  const client = await clerkClient();
+  console.log("User:", user);
   try {
     const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
 
@@ -45,8 +48,7 @@ async function sendMessage(to: string) {
   const token = process.env.WHATSAPP_TOKEN; // set in .env.local
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; // set in .env.local
 
-  const bodyText =
-    "Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard";
+  const bodyText = `Obrigado pela mensagem, entre no link: https://whatsapp-test-six.vercel.app/dashboard?phone=${to}`;
 
   try {
     const response = await fetch(
