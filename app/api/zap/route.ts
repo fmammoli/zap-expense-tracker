@@ -35,9 +35,12 @@ export async function POST(req: NextRequest) {
       const client = await clerkClient();
 
       const users = await client.users.getUserList({});
-      const user = users.data.find(
-        (user) => user.publicMetadata.whatasppNumber === from
-      );
+      const user = users.data.find((user) => {
+        console.log(user.publicMetadata.whatasppNumber, from);
+        if (user.publicMetadata.whatasppNumber === from) {
+          return user;
+        }
+      });
       if (user) {
         const clarkResponse = await client.users.getUserOauthAccessToken(
           user.id,
@@ -85,6 +88,8 @@ export async function POST(req: NextRequest) {
               ],
             },
           });
+          const bodyText = `Achei o usuário!`;
+          await sendMessage(from, bodyText);
         }
       } else {
         console.log("Message sent from number:", from);
