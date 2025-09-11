@@ -14,7 +14,7 @@ export default async function Page(searchParams: {
     const client = await clerkClient();
 
     await client.users.updateUserMetadata(userId, {
-      publicMetadata: { whatasppNumber: searchParams.phone || "" },
+      publicMetadata: { whatasppNumber: searchParams.whatsappNumber || "" },
     });
 
     const clarkResponse = await client.users.getUserOauthAccessToken(
