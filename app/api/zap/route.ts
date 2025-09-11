@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
     if (from) {
       const client = await clerkClient();
 
-      const users = await client.users.getUserList({});
+      const users = await client.users.getUserList();
+      console.log(users);
       const user = users.data.find((user) => {
         console.log(user.publicMetadata.whatasppNumber, from);
         if (user.publicMetadata.whatasppNumber === from) {
