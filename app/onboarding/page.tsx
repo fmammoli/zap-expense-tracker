@@ -29,8 +29,8 @@ export default function OnboardingComponent() {
   const handleCreateSheet = async () => {
     setLoading(true);
     try {
-      const name = sheetName || "Minhas Contas";
-      const sheetId = await createSheet();
+      const name = sheetName || "croco-contas";
+      const sheetId = await createSheet(name);
       console.log("Sheet created:", sheetId);
 
       const formData = new FormData();
