@@ -1,103 +1,92 @@
-import Image from "next/image";
+"use client";
+
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { SignedIn, SignUpButton } from "@clerk/nextjs";
+
+type Croc = {
+  id: number;
+  top: number;
+  left: number;
+  x: number;
+  y: number;
+  duration: number;
+};
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [crocs, setCrocs] = useState<Croc[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    const numCrocs = 200;
+    const generated = Array.from({ length: numCrocs }, (_, i) => {
+      const top = Math.random() * window.innerHeight;
+      const left = Math.random() * window.innerWidth;
+
+      // movement range (random ping-pong vectors)
+      const x = (Math.random() - 0.5) * 400; // -200 → 200
+      const y = (Math.random() - 0.5) * 400;
+
+      return {
+        id: i,
+        top,
+        left,
+        x,
+        y,
+        duration: 8 + Math.random() * 6,
+      };
+    });
+    setCrocs(generated);
+  }, []);
+
+  return (
+    <div className="flex flex-col justify-center items-center">
+      {/* Crocs pingponging */}
+      <div>
+        {crocs.map((c) => (
+          <motion.div
+            key={c.id}
+            className="absolute text-4xl select-none z-0"
+            style={{ top: c.top, left: c.left }}
+            animate={{ x: [0, c.x], y: [0, c.y] }}
+            transition={{
+              duration: c.duration,
+              repeat: Infinity,
+              repeatType: "reverse", // bounce
+              ease: "easeInOut",
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {Math.random() < 0.5 ? "🐊" : "💸"}
+          </motion.div>
+        ))}
+      </div>
+      {/* Content */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+        className="text-center relative z-10 p-6"
+      >
+        <h1 className="text-6xl md:text-7xl font-extrabold text-white drop-shadow-lg">
+          CrocoContas
+        </h1>
+        <p className="mt-6 text-lg md:text-xl text-green-100 max-w-md mx-auto font-semibold">
+          Registre seus gastos pelo Zap e veja tudo organizadinho numa planilha
+          no seu google docs. 🐊
+        </p>
+
+        <div className="mt-12">
+          <SignUpButton>
+            <Button
+              size="lg"
+              className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
+            >
+              Começar 🚀
+            </Button>
+          </SignUpButton>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </motion.div>
     </div>
   );
 }
