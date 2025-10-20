@@ -1,232 +1,90 @@
-import { TypographyH1 } from "@/components/ui/typography_h1";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { google } from "googleapis";
-import BrPhoneInput from "./br-phone-input";
-import Form from "next/form";
+"use client";
+
+import { useUser } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import DataForm from "./data-form";
+import Link from "next/link";
 
-async function actionZap(formData: FormData) {
-  "use server";
-  console.log("Form data:", formData);
-  const user = await auth();
-  const userId = user.userId;
-  const rawPhone = formData.get("phone");
-  const cleanedPhone = rawPhone?.toString().replace(/\D/g, "");
+export default function DashboardPage() {
+  const { user, isLoaded } = useUser();
+  const [sheetLink, setSheetLink] = useState<string | null>(null);
 
-  const client = await clerkClient();
+  useEffect(() => {
+    // Aqui você pode buscar a planilha do usuário via API ou atributos do usuário
+    // Supondo que você tenha salvo o sheetId no usuário via custom attribute
+    if (user) {
+      const id = user.publicMetadata?.sheetId;
+      if (id) {
+        setSheetLink(`https://docs.google.com/spreadsheets/d/${id}/edit`);
+      }
+    }
+  }, [user]);
 
-  await client.users.updateUserMetadata(userId!, {
-    publicMetadata: { whatsappNumber: cleanedPhone || "" },
-  });
-}
+  const botNumber = "+1 (555) 182-1747"; // número do WhatsApp do bot
+  const botLink = `https://wa.me/15551821747`; // link direto para o WhatsApp
 
-async function actionSheet(formData: FormData) {
-  "use server";
-  console.log("Form data:", formData);
-  const user = await auth();
-  const userId = user.userId;
-
-  const url = formData.get("sheetLink")?.toString() || "";
-  const spreadSheetId = url.split("/d/")[1].split("/")[0];
-
-  const client = await clerkClient();
-
-  await client.users.updateUserMetadata(userId!, {
-    publicMetadata: { spreadSheetId: spreadSheetId || "" },
-  });
-}
-
-async function createSheet() {
-  "use server";
-  const user = await auth();
-  const userId = user.userId;
-
-  const client = await clerkClient();
-  const token = await client.users.getUserOauthAccessToken(userId!, "google");
-
-  const googleAuthClient = new google.auth.OAuth2();
-  googleAuthClient.setCredentials({ access_token: token.data[0].token || "" });
-
-  const drive = google.drive({ version: "v3", auth: googleAuthClient });
-  const sheets = google.sheets({
-    version: "v4",
-    auth: googleAuthClient,
-  });
-
-  const response = await sheets.spreadsheets.create({
-    requestBody: {
-      properties: { title: "minhas-contas-app" },
-      sheets: [{ properties: { title: "Extrato" } }],
-    },
-  });
-  const spreadsheetId = response.data.spreadsheetId || "";
-  const sheetTitle = response.data.sheets?.[0].properties?.title;
-
-  console.log("Created new spreadsheet:", spreadsheetId);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${sheetTitle}!A1:F1`,
-    valueInputOption: "RAW",
-    requestBody: {
-      values: [["Data", "Valor", "Tipo", "Quem", "Categoria", "Description"]],
-    },
-  });
-}
-
-export async function Page2({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const whatsappNumber = (await searchParams).whatsappNumber as string;
-  const user = await auth();
-  const userId = user.userId;
-  const spreadsheetId: string = "";
-
-  // if (userId) {
-  //   const provider = "google";
-  //   const client = await clerkClient();
-
-  //   // await client.users.updateUserMetadata(userId, {
-  //   //   publicMetadata: { whatsappNumber: whatsappNumber || "" },
-  //   // });
-
-  //   const clarkResponse = await client.users.getUserOauthAccessToken(
-  //     userId,
-  //     provider
-  //   );
-
-  //   const token = clarkResponse.data[0].token || "";
-
-  //   const googleAuthClient = new google.auth.OAuth2();
-  //   googleAuthClient.setCredentials({ access_token: token });
-
-  //   const drive = google.drive({ version: "v3", auth: googleAuthClient });
-  //   const sheets = google.sheets({
-  //     version: "v4",
-  //     auth: googleAuthClient,
-  //   });
-
-  //   // 🔍 Step 1: Search for a spreadsheet named "system-sheet"
-  //   const search = await drive.files.list({
-  //     q: "name='minhas-contas-app' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
-  //     fields: "files(id, name)",
-  //     spaces: "drive",
-  //   });
-
-  //   if (search.data.files && search.data.files.length === 0) {
-  //     //So here I send a message to the user on whatsapp asking if he wants to create a new spreadsheet or link to an existing one
-
-  //     //Create sheet if not found
-  //     const response = await sheets.spreadsheets.create({
-  //       requestBody: {
-  //         properties: { title: "minhas-contas-app" },
-  //         sheets: [{ properties: { title: "Extrato" } }],
-  //       },
-  //     });
-  //     spreadsheetId = response.data.spreadsheetId || "";
-  //     const sheetTitle = response.data.sheets?.[0].properties?.title;
-  //     console.log("Created new spreadsheet:", spreadsheetId);
-
-  //     await sheets.spreadsheets.values.update({
-  //       spreadsheetId,
-  //       range: `${sheetTitle}!A1:F1`,
-  //       valueInputOption: "RAW",
-  //       requestBody: {
-  //         values: [
-  //           ["Data", "Valor", "Tipo", "Quem", "Categoria", "Description"],
-  //         ],
-  //       },
-  //     });
-  //   } else {
-  //     //Found spreadsheet id
-  //     spreadsheetId = search.data.files![0].id || "";
-  //     console.log("Found spreadsheet:", spreadsheetId);
-  //     const resp = await sheets.spreadsheets.get({ spreadsheetId });
-  //     const sheetTitle = resp.data.sheets?.[0].properties?.title;
-  //     console.log("Sheet title:", sheetTitle);
-
-  //     await sheets.spreadsheets.values.append({
-  //       spreadsheetId,
-  //       range: `${sheetTitle}!A1:C1`,
-  //       valueInputOption: "RAW",
-  //       requestBody: {
-  //         values: [
-  //           [
-  //             new Date().toLocaleDateString(),
-  //             Math.random() * 100,
-  //             "Test entry from app",
-  //           ],
-  //         ],
-  //       },
-  //     });
-  //   }
-  // }
-
-  if (!userId) {
-    return <div>Faça o login para acessar seu painel</div>;
-  }
+  if (!isLoaded) return <p>Loading...</p>;
 
   return (
-    <div className=" bg-slate-200 p-4">
-      <div className="max-w-3xl mx-auto p-4 bg-white flex flex-col gap-8">
-        <Form action={actionZap}>
-          <TypographyH1>1. Seu WhatsApp:</TypographyH1>
-          <div className="flex justify-center mt-8 gap-2">
-            <BrPhoneInput name="phone" />
-            <Button type="submit">Salvar</Button>
-          </div>
-        </Form>
-        <TypographyH1>2. Conecte sua tabela de contas:</TypographyH1>
-        <Form action={actionSheet}>
-          <div className="flex justify-center w-sm mx-auto items-center gap-2">
-            <Input
-              type="email"
-              placeholder="link da tabela compartilhada"
-              name="sheetLink"
-            />
-            <Button type="submit" variant="outline">
-              Salvar
+    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
+      <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 w-full max-w-xl shadow-lg flex flex-col gap-6">
+        <h1 className="text-3xl font-bold text-purple-700 text-center drop-shadow">
+          🐊 Bem-vindo ao ZapGastos!
+        </h1>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-semibold text-purple-700">
+            Como registrar seus gastos
+          </h2>
+          <p>
+            É simples! Basta enviar uma mensagem para o nosso bot no WhatsApp
+            descrevendo o gasto e o valor.
+          </p>
+          <p className="font-mono bg-gray-100 px-2 py-1 rounded">
+            Exemplo: Almoço 25,00
+          </p>
+          <p>ou</p>
+          <p className="font-mono bg-gray-100 px-2 py-1 rounded">
+            Exemplo: Almoço 100 foi caro esse
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <h2 className="text-xl font-semibold text-purple-700">
+            Bot no WhatsApp
+          </h2>
+          <p>Adicione o número do bot e comece a enviar suas despesas:</p>
+          <Link href={botLink} target="_blank" rel="noopener noreferrer">
+            <Button className="w-full mt-2 bg-green-500 hover:bg-green-400 text-white">
+              Abrir WhatsApp ({botNumber})
             </Button>
-          </div>
-        </Form>
-        <div>
-          <TypographyH1> - Ou -</TypographyH1>
-          <div className="flex justify-center mt-8">
-            <Button>Criar uma tabla de contas no google drive!</Button>
-          </div>
-        </div>
+          </Link>
+        </section>
 
-        <div></div>
-      </div>
+        {sheetLink && (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-xl font-semibold text-purple-700">
+              Sua planilha de despesas
+            </h2>
+            <p>
+              Você pode abrir sua planilha para conferir ou editar seus gastos
+              manualmente:
+            </p>
+            <Link href={sheetLink} target="_blank" rel="noopener noreferrer">
+              <Button className="w-full mt-2 bg-purple-600 hover:bg-purple-500 text-white">
+                Abrir planilha
+              </Button>
+            </Link>
+          </section>
+        )}
 
-      <div>
-        <div>
-          <h1>Welcome, {user.userId}</h1>
-          <p>Spreadsheet ready.</p>
-          <a
-            href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open system-sheet
-          </a>
-          <p>Whatsapp Number: {whatsappNumber}</p>
-        </div>
+        <section className="mt-4 text-gray-800 text-center">
+          <p>
+            Dica: envie mensagens claras com valor e descrição para que o bot
+            registre corretamente.
+          </p>
+        </section>
       </div>
     </div>
   );
-}
-
-export default async function Page() {
-  const user = await auth();
-  const userId = user.userId;
-
-  if (!userId) {
-    return <div>Faça o login para acessar seu painel</div>;
-  }
-
-  return <DataForm></DataForm>;
 }

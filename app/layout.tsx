@@ -9,6 +9,7 @@ import {
 } from "@clerk/nextjs";
 
 import { Geist, Geist_Mono } from "next/font/google";
+// @ts-expect error globals is not working for some reason
 import "./globals.css";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +41,7 @@ export default function RootLayout({
       <html lang="pt-BR">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen 
-          bg-gradient-to-b from-green-400 via-purple-400 to-pink-400 overflow-hidden`}
+          bg-gradient-to-b from-green-400 via-purple-400 to-pink-400`}
         >
           {/* Fun Header */}
           {/* Fun Header */}
@@ -52,9 +53,9 @@ export default function RootLayout({
               {/* Logo / App Name */}
               <div className="flex items-center gap-3">
                 <span className="text-4xl animate-bounce">🐊</span>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow">
+                {/* <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow">
                   CrocoConta
-                </h1>
+                </h1> */}
               </div>
 
               {/* Auth Controls */}
@@ -104,7 +105,7 @@ export default function RootLayout({
           </header>
 
           {/* Page content */}
-          <main className="pt-20">{children}</main>
+          <main className="">{children}</main>
         </body>
       </html>
     </ClerkProvider>

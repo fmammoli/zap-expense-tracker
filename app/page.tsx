@@ -2,9 +2,8 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { SignedIn, SignUpButton } from "@clerk/nextjs";
+import { SignUpButton } from "@clerk/nextjs";
 
 type Croc = {
   id: number;
@@ -19,7 +18,7 @@ export default function Home() {
   const [crocs, setCrocs] = useState<Croc[]>([]);
 
   useEffect(() => {
-    const numCrocs = 200;
+    const numCrocs = 100;
     const generated = Array.from({ length: numCrocs }, (_, i) => {
       const top = Math.random() * window.innerHeight;
       const left = Math.random() * window.innerWidth;
