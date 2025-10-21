@@ -21,7 +21,7 @@ export default function DashboardPage() {
   }, [user]);
 
   const botNumber = "+1 (555) 182-1747"; // número do WhatsApp do bot
-  const botLink = `https://wa.me/15551821747`; // link direto para o WhatsApp
+  const botLink = `https://wa.me/15551821747?text=Ajuda`; // link direto para o WhatsApp
 
   if (!isLoaded) return <p>Loading....</p>;
 
