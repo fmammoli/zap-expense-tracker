@@ -7,8 +7,9 @@ import { completeOnboarding } from "./_actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// @ts-expect-error globals stuff
+
 import "react-international-phone/style.css";
+
 import {
   defaultCountries,
   parseCountry,
