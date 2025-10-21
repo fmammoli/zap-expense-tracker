@@ -80,7 +80,7 @@ export default function Home() {
         </p>
 
         <div className="mt-12">
-          <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
+          <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
             <Button
               size="lg"
               className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
