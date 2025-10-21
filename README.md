@@ -37,6 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Whatsapp test curl
 
+Adding an expense
 curl -X POST http://localhost:3000/api/zap \
  -H "Content-Type: application/json" \
  -d '{
@@ -62,6 +63,41 @@ curl -X POST http://localhost:3000/api/zap \
 "timestamp": "1700000000",
 "type": "text",
 "text": { "body": "Almoco 20 esse foi caro viu" }
+}
+]
+}
+}
+]
+}
+]
+}'
+
+Asking for report
+curl -X POST http://localhost:3000/api/zap \
+ -H "Content-Type: application/json" \
+ -d '{
+"object": "whatsapp_business_account",
+"entry": [
+{
+"id": "123456789",
+"changes": [
+{
+"field": "messages",
+"value": {
+"messaging_product": "whatsapp",
+"contacts": [
+{
+"profile": { "name": "Felipe" },
+"wa_id": "5512991788976"
+}
+],
+"messages": [
+{
+"from": "5512991788976",
+"id": "wamid.HBgL1234",
+"timestamp": "1700000000",
+"type": "text",
+"text": { "body": "Quanto eu gastei esse mês?" }
 }
 ]
 }
