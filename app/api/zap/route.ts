@@ -1,8 +1,10 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
-import { google, sheets_v4 } from "googleapis";
+import { google, type sheets_v4 } from "googleapis";
 import { GoogleGenAI, Type } from "@google/genai";
 import { summarizeUserExpenses } from "./summerizeUserExpenses";
+import sendMessage from "./sendMessage";
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function GET(req: NextRequest) {
@@ -22,93 +24,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-interface Expense {
-  tipo: string;
-  valor: number;
-  categoria: string;
-  descricao: string;
-  data: string;
-  nome?: string;
-}
-
-interface CategorySummary {
-  categoria: string;
-  total: number;
-  percentage: number;
-}
-
-export async function getFilteredExpenses(
-  sheets: sheets_v4.Sheets,
-  sheetId: string,
-  { month, year, name }: { month: number; year: number; name?: string }
-): Promise<{
-  total: number;
-  expenses: Expense[];
-  byCategory: CategorySummary[];
-}> {
-  const range = "Sheet1!A2:F"; // Adjust this range if needed
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range,
-  });
-
-  const rows = response.data.values || [];
-  if (!rows.length) return { total: 0, expenses: [], byCategory: [] };
-
-  // Assuming columns: Tipo | Valor | Categoria | Descricao | Data | Nome
-  const allExpenses: Expense[] = rows.map((r) => ({
-    tipo: r[0],
-    valor: parseFloat(r[1]) || 0,
-    categoria: r[2] || "Sem categoria",
-    descricao: r[3] || "",
-    data: r[4],
-    nome: r[5] || "",
-  }));
-
-  const filtered = allExpenses.filter((e) => {
-    if (!e.data) return false;
-
-    let parsedDate: Date;
-
-    // Try to parse "DD/MM/YYYY" or "YYYY-MM-DD"
-    if (e.data.includes("/")) {
-      const [day, monthStr, yearStr] = e.data.split("/");
-      parsedDate = new Date(+yearStr, +monthStr - 1, +day);
-    } else if (e.data.includes("-")) {
-      parsedDate = new Date(e.data);
-    } else {
-      return false; // invalid format
-    }
-
-    const sameMonth = parsedDate.getMonth() + 1 === month;
-    const sameYear = parsedDate.getFullYear() === year;
-    const sameName = !name || e.nome?.toLowerCase() === name.toLowerCase();
-
-    return sameMonth && sameYear && sameName;
-  });
-
-  const total = filtered.reduce((sum, e) => sum + e.valor, 0);
-
-  // Group by category
-  const categoryMap: Record<string, number> = {};
-  for (const e of filtered) {
-    categoryMap[e.categoria] = (categoryMap[e.categoria] || 0) + e.valor;
-  }
-
-  const byCategory: CategorySummary[] = Object.entries(categoryMap).map(
-    ([categoria, totalCat]) => ({
-      categoria,
-      total: totalCat,
-      percentage: total > 0 ? (totalCat / total) * 100 : 0,
-    })
-  );
-
-  // Sort by biggest category
-  byCategory.sort((a, b) => b.total - a.total);
-
-  return { total, expenses: filtered, byCategory };
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -120,64 +35,99 @@ export async function POST(req: NextRequest) {
   const messageBody =
     body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
 
-  console.log(from);
-  console.log(messageBody);
-
   if (!from || !messageBody) {
     console.log("No 'from' or 'messageBody' field found in the message.");
     return new NextResponse(null, { status: 200 });
   }
 
   // Query Clerk for user with matching whatsappNumber in public metadata
-  const client = await clerkClient();
-  const users = await client.users.getUserList({
-    limit: 100, // adjust as needed
-  });
-
-  const matchedUser = users.data.find((user) => {
-    console.log(user.publicMetadata.whatsappNumber);
-    if (
-      (user.publicMetadata.whatsappNumber as string).replace(/\D/g, "") === from
-    ) {
-      return true;
+  let matchedUser = null;
+  let token = null;
+  try {
+    const client = await clerkClient();
+    const users = await client.users.getUserList({
+      limit: 100, // adjust as needed
+    });
+    matchedUser = users.data.find((user) => {
+      console.log(user.publicMetadata.whatsappNumber);
+      if (
+        (user.publicMetadata.whatsappNumber as string).replace(/\D/g, "") ===
+        from
+      ) {
+        return true;
+      }
+    });
+    if (!matchedUser) {
+      console.log("No user found with this WhatsApp number");
+      return NextResponse.json({ error: "No user found" }, { status: 404 });
     }
-  });
-  if (!matchedUser) {
-    console.log("No user found with this WhatsApp number");
-    return NextResponse.json({ error: "No user found" }, { status: 404 });
+    console.log(
+      "Matched user:",
+      matchedUser.id,
+      matchedUser.emailAddresses?.[0]?.emailAddress,
+      matchedUser.firstName,
+      matchedUser.lastName,
+      matchedUser.publicMetadata.whatsappNumber,
+      matchedUser.publicMetadata.sheetId
+    );
+
+    // Here you can continue: save message to Google Sheet, etc.
+    const clarkResponse = await client.users.getUserOauthAccessToken(
+      matchedUser.id,
+      "google"
+    );
+
+    token = clarkResponse.data[0].token;
+  } catch (err) {
+    console.error("Error fetching users from Clerk:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
-  console.log(
-    "Matched user:",
-    matchedUser.id,
-    matchedUser.emailAddresses?.[0]?.emailAddress,
-    matchedUser.firstName,
-    matchedUser.lastName,
-    matchedUser.publicMetadata.whatsappNumber,
-    matchedUser.publicMetadata.sheetId
-  );
 
-  // Here you can continue: save message to Google Sheet, etc.
-  const clarkResponse = await client.users.getUserOauthAccessToken(
-    matchedUser.id,
-    "google"
-  );
+  if (!token) {
+    console.log("No Google OAuth token found for this user.");
+    sendMessage(
+      from,
+      "Desculpe, não consegui encontrar suas informações. Tente logar novamente no serviço usando sua conta do google."
+    );
+    return NextResponse.json(
+      { error: "No Google OAuth token found" },
+      { status: 403 }
+    );
+  }
 
-  const token = clarkResponse.data[0].token || "";
-  const googleAuthClient = new google.auth.OAuth2();
-  googleAuthClient.setCredentials({ access_token: token });
+  let sheets: sheets_v4.Sheets | null = null;
+  try {
+    const googleAuthClient = new google.auth.OAuth2();
+    googleAuthClient.setCredentials({ access_token: token });
+    sheets = google.sheets({
+      version: "v4",
+      auth: googleAuthClient,
+    });
+  } catch (err) {
+    console.error("Error setting up Google Auth client:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 
-  const sheets = google.sheets({
-    version: "v4",
-    auth: googleAuthClient,
-  });
+  if (!sheets) {
+    console.log("Google Sheets client not initialized.");
+    return NextResponse.json(
+      { error: "Google Sheets client not initialized" },
+      { status: 500 }
+    );
+  }
 
   const typeSwitch = await parseMessageTypeWithGemini(messageBody);
   console.log(typeSwitch);
 
   // Case weird message
   if (typeSwitch?.tipo === null) {
-    const helpText = `
-Olá, ${matchedUser.firstName}! Não consegui entender sua mensagem.`;
+    const helpText = `Olá, ${matchedUser.firstName}! Não consegui entender sua mensagem.`;
     sendMessage(from, helpText);
     return NextResponse.json(null, { status: 200 });
   }
@@ -188,15 +138,15 @@ Olá, ${matchedUser.firstName}! Não consegui entender sua mensagem.`;
 Olá, ${matchedUser.firstName}! Aqui estão alguns exemplos de como você pode registrar suas transações financeiras:
 
 1. Para registrar uma despesa, envie uma mensagem no formato:
-   "Descrição Valor"
-   Exemplo: "Uber 23,50"
+  "Descrição Valor"
+  Exemplo: "Uber 23,50"
 
 2. Para registrar uma receita, envie uma mensagem no formato:
-   "Descrição Valor"
-   Exemplo: "Salário 1000"
+  "Descrição Valor"
+  Exemplo: "Salário 1000"
 
 3. Para obter um relatório de gastos, envie a mensagem:
-   "Quanto eu gastei no último mês?"
+  "Quanto eu gastei no último mês?"
 
 Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada!  🐊`;
 
@@ -416,42 +366,6 @@ Regras:
 - Retorne somente JSON válido, sem explicações extras.
 - Se a mensagem não descrever uma transação financeira, retorne todos os campos como null.
 `;
-
-async function sendMessage(to: string, bodyText: string) {
-  const token = process.env.WHATSAPP_TOKEN; // set in .env.local
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; // set in .env.local
-
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to,
-          type: "text",
-          text: {
-            preview_url: true,
-            body: bodyText,
-          },
-        }),
-      }
-    );
-
-    const result = await response.json();
-    console.log("WhatsApp API response:", result);
-
-    return NextResponse.json({ success: true, result });
-  } catch (err) {
-    console.error("Error sending WhatsApp message:", err);
-    return NextResponse.json({ success: false, error: err }, { status: 500 });
-  }
-}
 
 async function parseNewRegisterWithGemini(message: string) {
   if (!GEMINI_API_KEY) {
