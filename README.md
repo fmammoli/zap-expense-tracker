@@ -62,7 +62,7 @@ curl -X POST http://localhost:3000/api/zap \
 "id": "wamid.HBgL1234",
 "timestamp": "1700000000",
 "type": "text",
-"text": { "body": "Almoco 20 esse foi caro viu" }
+"text": { "body": "Almoco 20" }
 }
 ]
 }
