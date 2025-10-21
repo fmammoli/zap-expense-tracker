@@ -67,16 +67,16 @@ export default function RootLayout({
                 {/* Auth Controls */}
                 <div className="flex items-center gap-4">
                   <SignedOut>
-                    {/* <SignInButton>
-                      <Button className="bg-white/80 text-purple-700 font-semibold rounded-full px-5 py-2 hover:scale-105 hover:bg-yellow-200 transition-transform shadow">
-                        Entrar
-                      </Button>
-                    </SignInButton> */}
-                    <SignUpButton>
-                      <button className="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold rounded-full px-6 py-2 transition-transform hover:scale-110 shadow-lg">
+                    <SignInButton>
+                      <Button className="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold rounded-full px-6 py-2 transition-transform hover:scale-110 shadow-lg">
                         Entrar 🎉
-                      </button>
-                    </SignUpButton>
+                      </Button>
+                    </SignInButton>
+                    {/* <SignUpButton>
+                      <Button className="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold rounded-full px-6 py-2 transition-transform hover:scale-110 shadow-lg">
+                        Entrar 🎉
+                      </Button>
+                    </SignUpButton> */}
                   </SignedOut>
                   <SignedIn>
                     <UserButton
