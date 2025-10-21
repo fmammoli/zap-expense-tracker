@@ -26,7 +26,7 @@ export default function DashboardPage() {
   if (!isLoaded) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
+    <div className="min-h-screen min-w-screen flex flex-col items-center justify-start p-6 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
       <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 w-full max-w-xl shadow-lg flex flex-col gap-6">
         <h1 className="text-3xl font-bold text-purple-700 text-center drop-shadow">
           🐊 Bem-vindo ao CrocoConta!
