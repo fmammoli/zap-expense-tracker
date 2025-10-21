@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 
 type Croc = {
   id: number;
@@ -15,6 +16,8 @@ type Croc = {
 };
 
 export default function Home() {
+  const { isSignedIn } = useAuth();
+
   const [crocs, setCrocs] = useState<Croc[]>([]);
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function Home() {
         </p>
 
         <div className="mt-12">
-          <Link href="/dashboard">
+          <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
             <Button
               size="lg"
               className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"

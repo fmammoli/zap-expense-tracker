@@ -7,7 +7,13 @@ import { completeOnboarding } from "./_actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "react-international-phone";
+// @ts-expect-error globals stuff
+import "react-international-phone/style.css";
+import {
+  defaultCountries,
+  parseCountry,
+  PhoneInput,
+} from "react-international-phone";
 import { createSheet } from "./create-sheet";
 
 export default function OnboardingComponent() {
@@ -56,8 +62,13 @@ export default function OnboardingComponent() {
     }
   };
 
+  const countries = defaultCountries.filter((country) => {
+    const { iso2 } = parseCountry(country);
+    return ["br"].includes(iso2);
+  });
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
+    <div className="min-h-screen min-w-screen flex flex-col items-center p-4 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
       <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 w-full max-w-md shadow-lg flex flex-col gap-6">
         <h1 className="text-2xl font-bold text-purple-700 text-center drop-shadow">
           Bem-vindo ao ZapGastos 🐊
@@ -68,11 +79,15 @@ export default function OnboardingComponent() {
             <label className="font-semibold text-purple-700">
               1️⃣ Digite seu WhatsApp
             </label>
-            <PhoneInput
-              defaultCountry="br"
-              value={phone}
-              onChange={setPhone}
-            ></PhoneInput>
+            <div>
+              <PhoneInput
+                name="whatsappPhone"
+                defaultCountry="br"
+                value={phone}
+                onChange={setPhone}
+                countries={countries}
+              ></PhoneInput>
+            </div>
             {error && <p className="text-red-600">{error}</p>}
             <Button type="submit" className="mt-2 w-full" disabled={loading}>
               {loading ? "Salvando..." : "Salvar número"}
