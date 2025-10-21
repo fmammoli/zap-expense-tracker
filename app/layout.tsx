@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZapGastos",
+  title: "CrocoConta",
   description:
     "Converse com o bot no WhatsApp e registre seus gastos direto na sua planilha.",
 };
