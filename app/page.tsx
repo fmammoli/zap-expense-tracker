@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
+import { SignUpButton, useAuth } from "@clerk/nextjs";
 
 type Croc = {
   id: number;
@@ -80,14 +80,25 @@ export default function Home() {
         </p>
 
         <div className="mt-12">
-          <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
-            <Button
-              size="lg"
-              className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
-            >
-              Começar 🚀
-            </Button>
-          </Link>
+          {isSignedIn ? (
+            <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
+              <Button
+                size="lg"
+                className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
+              >
+                Começar 🚀
+              </Button>
+            </Link>
+          ) : (
+            <SignUpButton>
+              <Button
+                size="lg"
+                className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
+              >
+                Começar 🚀
+              </Button>
+            </SignUpButton>
+          )}
         </div>
       </motion.div>
     </div>
