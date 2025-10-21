@@ -81,7 +81,7 @@ export default function Home() {
 
         <div className="mt-12">
           {isSignedIn ? (
-            <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
+            <Link href={"/dashboard"}>
               <Button
                 size="lg"
                 className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
