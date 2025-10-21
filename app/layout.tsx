@@ -14,6 +14,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Button } from "@/components/ui/button";
 import FloatingEmojis from "./floating-emojis";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,7 +56,9 @@ export default function RootLayout({
               >
                 {/* Logo / App Name */}
                 <div className="flex items-center gap-3">
-                  <span className="text-4xl animate-bounce">🐊</span>
+                  <Link href={"/"}>
+                    <span className="text-4xl animate-bounce">🐊</span>
+                  </Link>
                   {/* <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow">
                   CrocoConta
                 </h1> */}
