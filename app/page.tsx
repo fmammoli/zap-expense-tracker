@@ -18,7 +18,7 @@ export default function Home() {
   const [crocs, setCrocs] = useState<Croc[]>([]);
 
   useEffect(() => {
-    const numCrocs = 100;
+    const numCrocs = 20;
     const generated = Array.from({ length: numCrocs }, (_, i) => {
       const top = Math.random() * window.innerHeight;
       const left = Math.random() * window.innerWidth;
@@ -68,11 +68,12 @@ export default function Home() {
         className="text-center relative z-10 p-6"
       >
         <h1 className="text-6xl md:text-7xl font-extrabold text-white drop-shadow-lg">
-          CrocoContas
+          Croco Conta
         </h1>
         <p className="mt-6 text-lg md:text-xl text-green-100 max-w-md mx-auto font-semibold">
           Registre seus gastos pelo Zap e veja tudo organizadinho numa planilha
-          no seu google docs. 🐊
+          no seu próprio google docs. As informações não são salvas em nenhum
+          outro lugar. 🐊
         </p>
 
         <div className="mt-12">
