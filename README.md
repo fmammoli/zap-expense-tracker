@@ -34,3 +34,39 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+Whatsapp test curl
+
+curl -X POST http://localhost:3000/api/zap \
+ -H "Content-Type: application/json" \
+ -d '{
+"object": "whatsapp_business_account",
+"entry": [
+{
+"id": "123456789",
+"changes": [
+{
+"field": "messages",
+"value": {
+"messaging_product": "whatsapp",
+"contacts": [
+{
+"profile": { "name": "Felipe" },
+"wa_id": "5512991788976"
+}
+],
+"messages": [
+{
+"from": "5512991788976",
+"id": "wamid.HBgL1234",
+"timestamp": "1700000000",
+"type": "text",
+"text": { "body": "Almoco 20 esse foi caro viu" }
+}
+]
+}
+}
+]
+}
+]
+}'
