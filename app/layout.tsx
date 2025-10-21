@@ -13,6 +13,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 // @ts-expect error globals is not working for some reason
 import "./globals.css";
 import { Button } from "@/components/ui/button";
+import FloatingEmojis from "./floating-emojis";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,7 +103,10 @@ export default function RootLayout({
             </header>
 
             {/* Page content */}
-            <main className="flex justify-center">{children}</main>
+            <main className="flex justify-center">
+              <FloatingEmojis></FloatingEmojis>
+              {children}
+            </main>
           </body>
         </html>
       </ClerkProvider>
