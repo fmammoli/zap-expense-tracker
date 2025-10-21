@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "react-international-phone";
 import { createSheet } from "./create-sheet";
-import router from "next/router";
 
 export default function OnboardingComponent() {
   const [error, setError] = React.useState("");
@@ -17,6 +16,8 @@ export default function OnboardingComponent() {
   const [phone, setPhone] = React.useState("");
   const [sheetName, setSheetName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+
+  const router = useRouter();
 
   const { user } = useUser();
 
