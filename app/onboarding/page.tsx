@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "react-international-phone";
 import { createSheet } from "./create-sheet";
+import router from "next/router";
 
 export default function OnboardingComponent() {
   const [error, setError] = React.useState("");
@@ -43,9 +44,9 @@ export default function OnboardingComponent() {
       } else {
         // Reload Clerk user data
         await user?.reload();
-        setStep(3);
+        router.push("/dashboard"); // redirect to dashboard
+        //setStep(3);
       }
-      //router.push("/dashboard"); // redirect to dashboard
     } catch (err) {
       console.error(err);
       alert("Erro ao criar planilha!");
