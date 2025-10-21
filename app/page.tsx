@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { SignUpButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 type Croc = {
   id: number;
@@ -40,7 +40,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center items-center">
+    <div className="flex flex-col justify-center items-center pt-20">
       {/* Crocs pingponging */}
       <div>
         {crocs.map((c) => (
@@ -76,14 +76,14 @@ export default function Home() {
         </p>
 
         <div className="mt-12">
-          <SignUpButton>
+          <Link href="/dashboard">
             <Button
               size="lg"
               className="rounded-2xl px-8 py-6 text-xl shadow-lg bg-white text-purple-900 hover:bg-purple-200"
             >
               Começar 🚀
             </Button>
-          </SignUpButton>
+          </Link>
         </div>
       </motion.div>
     </div>

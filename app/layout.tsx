@@ -45,7 +45,7 @@ export default function RootLayout({
         >
           {/* Fun Header */}
           {/* Fun Header */}
-          <header className="relative p-6 rounded-2xl z-10">
+          <header className="relative p-6 rounded-2xl z-10 max-w-3xl mx-auto">
             <div
               className="flex justify-between items-center px-6 py-4 
                   bg-white/20 backdrop-blur-xs shadow-md rounded-2xl"
@@ -61,12 +61,7 @@ export default function RootLayout({
               {/* Auth Controls */}
               <div className="flex items-center gap-4">
                 <SignedOut>
-                  <SignInButton
-                    fallbackRedirectUrl={
-                      process.env
-                        .NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL
-                    }
-                  >
+                  <SignInButton>
                     <Button className="bg-white/80 text-purple-700 font-semibold rounded-full px-5 py-2 hover:scale-105 hover:bg-yellow-200 transition-transform shadow">
                       Entrar
                     </Button>
@@ -105,7 +100,7 @@ export default function RootLayout({
           </header>
 
           {/* Page content */}
-          <main className="">{children}</main>
+          <main className="flex justify-center">{children}</main>
         </body>
       </html>
     </ClerkProvider>

@@ -29,7 +29,7 @@ export default function DashboardPage() {
     <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-gradient-to-tr from-green-400 via-pink-400 to-purple-500">
       <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 w-full max-w-xl shadow-lg flex flex-col gap-6">
         <h1 className="text-3xl font-bold text-purple-700 text-center drop-shadow">
-          🐊 Bem-vindo ao ZapGastos!
+          🐊 Bem-vindo ao CrocoConta!
         </h1>
 
         <section className="flex flex-col gap-3">
@@ -43,7 +43,7 @@ export default function DashboardPage() {
           <p className="font-mono bg-gray-100 px-2 py-1 rounded">
             Exemplo: Almoço 25,00
           </p>
-          <p>ou</p>
+          <p></p>
           <p className="font-mono bg-gray-100 px-2 py-1 rounded">
             Exemplo: Almoço 100 foi caro esse
           </p>

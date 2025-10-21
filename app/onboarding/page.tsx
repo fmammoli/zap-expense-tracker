@@ -18,7 +18,6 @@ export default function OnboardingComponent() {
   const [loading, setLoading] = React.useState(false);
 
   const { user } = useUser();
-  const router = useRouter();
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
