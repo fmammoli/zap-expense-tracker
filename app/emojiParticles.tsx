@@ -44,9 +44,9 @@ function EmojiParticles({ num = 50 }) {
       sprite.scale.set(1, 1, 1);
 
       const velocity = new THREE.Vector3(
-        (Math.random() - 0.5) * 0.05,
-        (Math.random() - 0.5) * 0.05,
-        (Math.random() - 0.5) * 0.05
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
       );
 
       return { sprite, velocity, radius: 0.5 };

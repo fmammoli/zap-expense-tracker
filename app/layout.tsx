@@ -45,7 +45,7 @@ export default function RootLayout({
         <html lang="pt-BR">
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen 
-          bg-gradient-to-b from-green-400 via-purple-400 to-pink-400`}
+          bg-linear-to-b from-green-400 via-purple-400 to-pink-400`}
           >
             {/* Fun Header */}
             {/* Fun Header */}

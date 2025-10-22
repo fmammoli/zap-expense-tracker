@@ -30,6 +30,17 @@ const createSheet = async (name: string) => {
   const spreadsheetId = response.data.spreadsheetId || "";
   const sheetTitle = response.data.sheets?.[0].properties?.title;
 
+  const drive = await google.drive({ version: "v3", auth: googleAuthClient });
+
+  // Share the sheet publicly
+  await drive.permissions.create({
+    fileId: spreadsheetId,
+    requestBody: {
+      role: "writer", // or "writer"
+      type: "anyone",
+    },
+  });
+
   console.log("Created new spreadsheet:", spreadsheetId);
   await sheets.spreadsheets.values.update({
     spreadsheetId,
