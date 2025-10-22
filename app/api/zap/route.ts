@@ -229,9 +229,17 @@ Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada! 
 📂 *Tipo:* ${llmResponse.tipo === "receita" ? "📈 Receita" : "📉 Despesa"}  
 💰 *Valor:* R$ ${Number(llmResponse.valor).toFixed(2)}  
 🏷️ *Categoria:* ${llmResponse.categoria || "—"}  
-📝 *Descrição:* ${llmResponse.descricao || "—"}  
-💳 *Pagamento:* ${llmResponse.forma_pagamento || "—"}  
-💭 *Observações:* ${llmResponse.observacoes || "—"}  
+📝 *Descrição:* ${llmResponse.descricao || "—"}
+${
+  llmResponse.forma_pagamento !== "null" && llmResponse.forma_pagamento !== null
+    ? `💳 *Pagamento:* ${llmResponse.forma_pagamento || "—"}\n`
+    : ""
+}
+${
+  llmResponse.observacoes !== "null" && llmResponse.observacoes !== null
+    ? `💭 *Observações:* ${llmResponse.observacoes || "—"}\n`
+    : ""
+}
 
 Tudo anotadinho na planilha! 📊✨  
 Quer ver o extrato completo? É só me pedir!
