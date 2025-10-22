@@ -26,7 +26,7 @@ export default function DashboardPage() {
   }, [user]);
 
   const botNumber = "551151990251";
-  const botLink = `https://wa.me/15551821747?text=Ajuda`;
+  const botLink = `https://wa.me/${botNumber}?text=Ajuda`;
 
   if (!isLoaded) return <p>Loading....</p>;
 
