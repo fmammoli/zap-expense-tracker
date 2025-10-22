@@ -6,7 +6,7 @@ import { OrbitControls } from "@react-three/drei";
 
 export default function FloatingEmojis() {
   return (
-    <div className=" absolute min-h-screen w-full top-0 left-0 pointer-events-none z-0">
+    <div className="absolute min-h-screen w-full top-0 left-0 pointer-events-none z-0">
       <Canvas
         camera={{ position: [0, 0, 4], fov: 75 }}
         style={{ height: "100svh" }}
