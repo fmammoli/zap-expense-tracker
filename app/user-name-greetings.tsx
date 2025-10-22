@@ -2,10 +2,15 @@
 
 import { useUser } from "@clerk/nextjs";
 export default function UserNameGreetings() {
-  const { user, isLoaded } = useUser();
+  const { user, isSignedIn } = useUser();
   return (
-    <p className="text-gray-600">
-      Olá, <span className="text-purple-500 font-bold">{user?.firstName}</span>
-    </p>
+    <div>
+      {isSignedIn && (
+        <p className="text-gray-600">
+          Olá,{" "}
+          <span className="text-purple-500 font-bold">{user?.firstName}</span>
+        </p>
+      )}
+    </div>
   );
 }

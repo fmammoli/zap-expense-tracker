@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 export default async function sendMessage(to: string, bodyText: string) {
   const token = process.env.WHATSAPP_TOKEN; // set in .env.local
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; // set in .env.local
-
+  //const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID; // set in .env.local
+  const phoneNumberId = "841926722336934";
   try {
     const response = await fetch(
       `https://graph.facebook.com/v24.0/${phoneNumberId}/messages`,
