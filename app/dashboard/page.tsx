@@ -25,7 +25,7 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const botNumber = "+1 (555) 182-1747";
+  const botNumber = "551151990251";
   const botLink = `https://wa.me/15551821747?text=Ajuda`;
 
   if (!isLoaded) return <p>Loading....</p>;
