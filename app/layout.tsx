@@ -15,6 +15,7 @@ import "./globals.css";
 import { Button } from "@/components/ui/button";
 import FloatingEmojis from "./floating-emojis";
 import Link from "next/link";
+import UserNameGreetings from "./user-name-greetings";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,6 +67,7 @@ export default function RootLayout({
 
                 {/* Auth Controls */}
                 <div className="flex items-center gap-4">
+                  <UserNameGreetings></UserNameGreetings>
                   <SignedOut>
                     <SignInButton>
                       <Button className="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold rounded-full px-6 py-2 transition-transform hover:scale-110 shadow-lg">

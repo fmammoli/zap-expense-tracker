@@ -53,8 +53,8 @@ export default function DashboardPage() {
     setUpdating(true);
     try {
       console.log(newSheetId);
-      //await updateSheetId(sheetId);
 
+      await updateSheetId(newSheetId);
       const newLink = `https://docs.google.com/spreadsheets/d/${newSheetId}/edit`;
       setSheetLink(newLink);
       setInputValue(newLink);
