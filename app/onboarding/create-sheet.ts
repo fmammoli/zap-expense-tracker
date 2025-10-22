@@ -2,6 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { google } from "googleapis";
+import { createStyledTable } from "./setup-styled-sheet";
 
 const createSheet = async (name: string) => {
   const user = await auth();
@@ -42,25 +43,28 @@ const createSheet = async (name: string) => {
   });
 
   console.log("Created new spreadsheet:", spreadsheetId);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${sheetTitle}!A1:F1`,
-    valueInputOption: "RAW",
-    requestBody: {
-      values: [
-        [
-          "Data",
-          "Valor",
-          "Tipo",
-          "Quem",
-          "Categoria",
-          "Descrição",
-          "Forma de Pagamento",
-          "Observações",
-        ],
-      ],
-    },
-  });
+
+  await createStyledTable(sheets, spreadsheetId);
+
+  // await sheets.spreadsheets.values.update({
+  //   spreadsheetId,
+  //   range: `${sheetTitle}!A1:F1`,
+  //   valueInputOption: "RAW",
+  //   requestBody: {
+  //     values: [
+  //       [
+  //         "Data",
+  //         "Valor",
+  //         "Tipo",
+  //         "Quem",
+  //         "Categoria",
+  //         "Descrição",
+  //         "Forma de Pagamento",
+  //         "Observações",
+  //       ],
+  //     ],
+  //   },
+  // });
 
   return spreadsheetId;
 };
