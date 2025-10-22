@@ -196,11 +196,12 @@ Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada! 
 
     if (llmResponse && matchedUser.publicMetadata.sheetId) {
       // This is the table format
-      //   A1       B1      C1.     D1         E1.          F1
-      //["Data", "Valor", "Tipo", "Quem", "Categoria", "Descrição"]
+      //   A1       B1        C1.      D1         E1.           F1            G1                  H1
+      // "Data"   "Valor"   "Tipo"   "Quem"   "Categoria"   "Descrição" "Forma de Pagamento" "Observações",
+
       await sheets.spreadsheets.values.append({
         spreadsheetId: matchedUser.publicMetadata.sheetId as string,
-        range: `Extrato!A1:F1`,
+        range: `Extrato!A1:H1`,
         valueInputOption: "RAW",
         requestBody: {
           values: [
@@ -211,6 +212,8 @@ Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada! 
               `${matchedUser.firstName} ${matchedUser.lastName}`,
               llmResponse.categoria,
               llmResponse.descricao,
+              llmResponse.forma_pagamento,
+              llmResponse.observacoes,
             ],
           ],
         },
@@ -219,16 +222,20 @@ Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada! 
 
     try {
       const bodyText = `
-✅ *Gasto registrado com sucesso!* ✅
+💸 *Transação registrada com sucesso!* 🎉  
 
-👤 *Usuário:* ${matchedUser.firstName} ${matchedUser.lastName}
-📌 *Tipo:* ${llmResponse.tipo}
-💰 *Valor:* R$ ${llmResponse.valor.toFixed(2)}
-🏷️ *Categoria:* ${llmResponse.categoria}
-📝 *Descrição:* ${llmResponse.descricao}
+👤 *Quem:* ${matchedUser.firstName} ${matchedUser.lastName}  
+📆 *Data:* ${new Date().toLocaleDateString("pt-BR")}  
+📂 *Tipo:* ${llmResponse.tipo === "receita" ? "📈 Receita" : "📉 Despesa"}  
+💰 *Valor:* R$ ${Number(llmResponse.valor).toFixed(2)}  
+🏷️ *Categoria:* ${llmResponse.categoria || "—"}  
+📝 *Descrição:* ${llmResponse.descricao || "—"}  
+💳 *Pagamento:* ${llmResponse.forma_pagamento || "—"}  
+💭 *Observações:* ${llmResponse.observacoes || "—"}  
 
-🐊 
-  `;
+Tudo anotadinho na planilha! 📊✨  
+Quer ver o extrato completo? É só me pedir!
+`;
 
       await sendMessage(from, bodyText);
     } catch (err) {
@@ -346,25 +353,72 @@ const systemPrompt = `
 Você é um analisador de transações financeiras pessoais.  
 Sua tarefa é extrair dados estruturados de mensagens curtas do WhatsApp sobre finanças.  
 
-- Entrada: uma mensagem em linguagem natural (ex.: "Uber 23,50", "Salário 5000", "Almoço 45", "Netflix 39,90", "Recebi 200").  
-- Saída: JSON com os seguintes campos:
-  {
-    "tipo": "despesa" | "receita" | null,
-    "descricao": string | null,
-    "valor": number | null,
-    "moeda": string | null,
-    "categoria": string | null
-  }
+Entrada:
+Uma mensagem em linguagem natural, por exemplo:  
+- "Almoço 10 reais"  
+- "Jantar 20 cartão Nubank"  
+- "Uber 25 débito"  
+- "Recebi 300 do João"  
+- "Pix mercado 85"  
+
+Saída:
+Retorne somente JSON válido, no formato:
+
+{
+  "data": "YYYY-MM-DD" | null,
+  "descricao": string | null,
+  "categoria": string | null,
+  "forma_pagamento": string | null,
+  "valor": number | null,
+  "tipo": "despesa" | "receita" | null,
+  "observacoes": string | null
+}
 
 Regras:
-- Identifique se é uma DESPESA ou RECEITA.
-- Se não houver moeda, usar "BRL".
-- Deduzir categoria a partir da descrição:
-  - Despesas: alimentação (comidas e bebidas), transporte, compras, entretenimento, aluguel, contas, saúde, educação, outros.  
-  - Receitas: salário, presente, investimento, reembolso, outros.  
-- A categoria deve sempre ser preenchida se for despesa ou receita.
-- Retorne somente JSON válido, sem explicações extras.
-- Se a mensagem não descrever uma transação financeira, retorne todos os campos como null.
+1. Tipo:
+   - Se for gasto, use "despesa".
+   - Se for entrada (ex.: recebi, salário, venda), use "receita".
+   - Caso não indique claramente, use null.
+
+2. Data:
+   - Se a mensagem contiver uma data explícita (ex.: "ontem", "15/10"), converter para formato ISO YYYY-MM-DD.
+   - Caso não haja data, retornar null.
+
+3. Valor:
+   - Extrair número, convertendo vírgulas em pontos (ex.: "10,50" → 10.50).
+   - Se não houver valor explícito, retornar null.
+
+4. Moeda:
+   - Se não houver especificação, assumir "BRL". (pode ser omitido se não for essencial)
+
+5. Categoria (despesas):
+   - alimentação (almoço, jantar, lanche, café, mercado)
+   - transporte (uber, gasolina, passagem, estacionamento)
+   - compras (roupas, eletrônicos, supermercado)
+   - entretenimento (cinema, show, netflix)
+   - aluguel
+   - contas (energia, internet, telefone, água)
+   - saúde (farmácia, consulta)
+   - educação (curso, mensalidade)
+   - outros
+
+   Categoria (receitas):
+   - salário
+   - presente
+   - reembolso
+   - investimento
+   - outros
+
+6. Forma de pagamento:
+   - Detectar se houver menção (ex.: "pix", "cartão nubank", "crédito", "débito", "dinheiro").
+   - Se não houver, retornar null.
+
+7. Observações:
+   - Guardar qualquer informação adicional que não se encaixe nos campos acima (ex.: nomes de pessoas, lugares, comentários).
+
+8. Importante:
+   - Retorne somente o JSON, sem texto explicativo.
+   - Preencha null para campos ausentes.
 `;
 
 async function parseNewRegisterWithGemini(message: string) {
@@ -382,13 +436,23 @@ async function parseNewRegisterWithGemini(message: string) {
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          tipo: { type: Type.STRING },
+          data: { type: Type.STRING },
           descricao: { type: Type.STRING },
-          valor: { type: Type.NUMBER },
-          moeda: { type: Type.STRING },
           categoria: { type: Type.STRING },
+          forma_pagamento: { type: Type.STRING },
+          valor: { type: Type.NUMBER },
+          tipo: { type: Type.STRING },
+          observacoes: { type: Type.STRING },
         },
-        required: ["tipo", "descricao", "valor", "moeda", "categoria"],
+        required: [
+          "data",
+          "descricao",
+          "categoria",
+          "forma_pagamento",
+          "valor",
+          "tipo",
+          "observacoes",
+        ],
       },
     },
   });

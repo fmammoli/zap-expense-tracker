@@ -47,7 +47,18 @@ const createSheet = async (name: string) => {
     range: `${sheetTitle}!A1:F1`,
     valueInputOption: "RAW",
     requestBody: {
-      values: [["Data", "Valor", "Tipo", "Quem", "Categoria", "Description"]],
+      values: [
+        [
+          "Data",
+          "Valor",
+          "Tipo",
+          "Quem",
+          "Categoria",
+          "Descrição",
+          "Forma de Pagamento",
+          "Observações",
+        ],
+      ],
     },
   });
 
