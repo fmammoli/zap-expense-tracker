@@ -51,8 +51,7 @@ export async function POST(req: NextRequest) {
     matchedUser = users.data.find((user) => {
       console.log(`Checking `);
       if (
-        (user.publicMetadata.whatsappNumber as string).replace(/\D/g, "") ===
-        from
+        (user.publicMetadata.whatsappNumber as string).replace("+", "") === from
       ) {
         return true;
       }
