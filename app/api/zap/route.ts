@@ -24,6 +24,35 @@ export async function GET(req: NextRequest) {
   }
 }
 
+function checkIfNumberMatches(clerkNumber: string, waNumber: string) {
+  const normalizedClerkNumber = clerkNumber.replace("+", "");
+  const normalizedWaNumber = waNumber.replace("+", "");
+
+  if (normalizedClerkNumber === normalizedWaNumber) {
+    return true;
+  }
+
+  if (normalizedClerkNumber.length > normalizedWaNumber.length) {
+    const adjustedWaNumber = `${normalizedClerkNumber.slice(
+      0,
+      4
+    )}${normalizedClerkNumber.slice(5)}`;
+    if (adjustedWaNumber === normalizedWaNumber) {
+      return true;
+    }
+  }
+  if (normalizedClerkNumber.length < normalizedWaNumber.length) {
+    const adjustedWaNumber = `${normalizedWaNumber.slice(
+      0,
+      4
+    )}${normalizedWaNumber.slice(5)}`;
+    if (adjustedWaNumber === normalizedClerkNumber) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -50,11 +79,12 @@ export async function POST(req: NextRequest) {
     });
     matchedUser = users.data.find((user) => {
       console.log(`Checking `);
-      if (
-        (user.publicMetadata.whatsappNumber as string).replace("+", "") === from
-      ) {
-        return true;
-      }
+
+      const res = checkIfNumberMatches(
+        user.publicMetadata.whatsappNumber as string,
+        from
+      );
+      return res;
     });
     if (!matchedUser) {
       console.log(`No user found with this WhatsApp number: ${from}`);
