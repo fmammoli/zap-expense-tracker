@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       limit: 100, // adjust as needed
     });
     matchedUser = users.data.find((user) => {
-      console.log(user.publicMetadata.whatsappNumber);
+      console.log(`Checking `);
       if (
         (user.publicMetadata.whatsappNumber as string).replace(/\D/g, "") ===
         from
@@ -58,8 +58,11 @@ export async function POST(req: NextRequest) {
       }
     });
     if (!matchedUser) {
-      console.log("No user found with this WhatsApp number");
-      return NextResponse.json({ error: "No user found" }, { status: 404 });
+      console.log(`No user found with this WhatsApp number: ${from}`);
+      return NextResponse.json(
+        { error: `No user found with this WhatsApp number: ${from}` },
+        { status: 404 }
+      );
     }
     console.log(
       "Matched user:",
