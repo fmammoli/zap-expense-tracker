@@ -201,6 +201,7 @@ export async function POST(req: NextRequest) {
           `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       } catch (error) {
         fileLink = null;
+        console.log(error);
         return NextResponse.json(
           { error: `Error saving image on drive: ${error}` },
           { status: 500 }
