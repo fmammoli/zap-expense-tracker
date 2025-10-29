@@ -43,11 +43,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const messageBody =
-    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
-
-  if (!from || !messageBody) {
-    console.log("No 'from' or 'messageBody' field found in the message.");
+  if (!from) {
+    console.log("No 'from' field found in the message.");
     return new NextResponse(null, { status: 200 });
   }
 
@@ -140,8 +137,46 @@ export async function POST(req: NextRequest) {
   }
 
   if (type === "image") {
-    //const response = parseImageMessage();
+    const imageId =
+      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.image.id;
+    const jsonData = await parseImageMessage(imageId, from);
+    if (jsonData) {
+      // Format the response message with emoji and markdown
+      const responseMessage = `
+📸 *Recibo Processado com Sucesso!* 
+
+📅 *Data:* ${
+        jsonData.data
+          ? new Date(jsonData.data).toLocaleDateString("pt-BR")
+          : "Não identificada"
+      }
+🏪 *Estabelecimento:* ${jsonData.descricao || "Não identificado"}
+💰 *Valor Total:* R$ ${jsonData.valor?.toFixed(2) || "Não identificado"}
+🏷️ *Categoria:* ${jsonData.categoria || "Não identificada"}
+${
+  jsonData.forma_pagamento
+    ? `💳 *Forma de Pagamento:* ${jsonData.forma_pagamento}\n`
+    : ""
+}
+📝 *Detalhes:* ${jsonData.observacoes || "Nenhum detalhe adicional"}
+
+✅ Recibo registrado com sucesso para reembolso!
+`;
+
+      await sendMessage(from, responseMessage);
+    } else {
+      console.error("Was not able to process the script.");
+      await sendMessage(
+        from,
+        "❌ Não consegui processar este recibo. Por favor, envie uma foto mais clara ou digite as informações manualmente."
+      );
+      return new NextResponse(null, { status: 200 });
+    }
+    console.log(jsonData);
   }
+
+  const messageBody =
+    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
 
   //Parse the type of text message message
   const typeSwitch = await parseMessageTypeWithGemini(messageBody);

@@ -34,14 +34,10 @@ Regras:
 - Para categoria, use: alimentação, transporte, compras, entretenimento, saúde, educação, outros
 - Valor deve ser em formato numérico (ex: 10.50)
 - Mantenha observacoes organizado e legível
+- Se a imagem estiver muito ruim para identificar as informações, returne null.
 `;
 
-export async function parseImageMessage(
-  imageId: string,
-  from: string,
-  matchedUser: User,
-  sheets: sheets_v4.Sheets
-) {
+export async function parseImageMessage(imageId: string, from: string) {
   try {
     if (!GEMINI_API_KEY) {
       return;
