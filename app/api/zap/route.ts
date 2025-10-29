@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
           },
           media: {
             mimeType: "image/jpeg",
-            body: jsonData.base64ImageData,
+            body: Buffer.from(jsonData.base64ImageData, "base64"),
           },
           fields: "id, webViewLink, webContentLink",
         });
