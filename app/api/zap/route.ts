@@ -151,6 +151,27 @@ export async function POST(req: NextRequest) {
     const jsonData = await parseImageMessage(imageId, from);
     if (jsonData) {
       // Format the response message with emoji and markdown
+      // Save to spreadsheet first
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: matchedUser.publicMetadata.sheetId as string,
+        range: `Extrato!A1:H1`,
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [
+            [
+              new Date(jsonData.data).toLocaleDateString("pt-BR"),
+              jsonData.valor,
+              "despesa",
+              `${matchedUser.firstName} ${matchedUser.lastName}`,
+              jsonData.categoria,
+              jsonData.descricao,
+              jsonData.forma_pagamento,
+              jsonData.observacoes,
+            ],
+          ],
+        },
+      });
+
       const responseMessage = `
 📸 *Recibo Processado com Sucesso!* 
 
@@ -169,7 +190,7 @@ ${
 }
 📝 *Detalhes:* ${jsonData.observacoes || "Nenhum detalhe adicional"}
 
-✅ Recibo registrado com sucesso para reembolso!
+✅ Recibo registrado com sucesso na sua planilha!
 `;
 
       await sendMessage(from, responseMessage);
@@ -257,7 +278,18 @@ Estou aqui para ajudar você a gerenciar suas finanças de forma descomplicada! 
 
     if (llmResponse.tipo === null && llmResponse.valor === null) {
       console.log("Message does not describe a financial transaction.");
-      return NextResponse.json({ ok: true, userId: matchedUser.id });
+      await sendMessage(
+        "Desculpa eu só consigo entender transações finaiceiras.",
+        from
+      );
+      return NextResponse.json(
+        {
+          ok: true,
+          userId: matchedUser.id,
+          error: "mensagem não é uma transação financeira",
+        },
+        { status: 200 }
+      );
     }
 
     if (llmResponse && matchedUser.publicMetadata.sheetId) {

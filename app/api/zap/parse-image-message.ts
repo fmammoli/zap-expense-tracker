@@ -101,11 +101,14 @@ export async function parseImageMessage(imageId: string, from: string) {
     }
   } catch (error) {
     console.error("Error processing receipt:", error);
-    await sendMessage(
-      from,
-      "❌ Não consegui processar este recibo. Por favor, envie uma foto mais clara ou digite as informações manualmente."
+
+    return NextResponse.json(
+      {
+        error:
+          "❌ Não consegui processar este recibo. Por favor, envie uma foto mais clara ou digite as informações manualmente.",
+      },
+      { status: 400 }
     );
-    return new NextResponse(null, { status: 200 });
   }
 }
 
