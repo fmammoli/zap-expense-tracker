@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import sendMessage from "./sendMessage";
-import { sheets_v4 } from "googleapis";
 import { GoogleGenAI, Type } from "@google/genai";
-import { User } from "@clerk/nextjs/server";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -45,7 +43,7 @@ export async function parseImageMessage(imageId: string, from: string) {
 
     // 1. Get image URL from WhatsApp
     const imageUrl = await getWhatsAppMedia(imageId);
-
+    console.log(`WA Image url: ${imageUrl}`);
     // 2. Download image
     const imageResponse = await fetch(imageUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
@@ -54,12 +52,15 @@ export async function parseImageMessage(imageId: string, from: string) {
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash-lite",
-      contents: {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64ImageData,
+      contents: [
+        {
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: base64ImageData,
+          },
         },
-      },
+        { text: receiptSystemPrompt },
+      ],
       config: {
         systemInstruction: receiptSystemPrompt,
         responseMimeType: "application/json",
