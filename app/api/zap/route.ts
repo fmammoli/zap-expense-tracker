@@ -192,35 +192,21 @@ export async function POST(req: NextRequest) {
         );
         console.log("trying to read the body");
         const driveUploadResult = await driveUpload.json();
+        const fileId = driveUploadResult.id;
         console.log(driveUploadResult);
+
+        // make file accessible to anyone with link
+        await drive.permissions.create({
+          fileId,
+          requestBody: {
+            role: "reader",
+            type: "anyone",
+          },
+        });
 
         console.log("uploading with API");
 
-        // const uploaded = await drive.files.create({
-        //   requestBody: {
-        //     name: fileName,
-        //     parents: driveResponse.id ? [driveResponse.id] : undefined,
-        //   },
-        //   media: {
-        //     mimeType: "image/jpeg",
-        //     body: jsonData.base64ImageData,
-        //   },
-        //   fields: "id, webViewLink, webContentLink",
-        // });
-
-        // const fileId = uploaded.data.id!;
-        // // make file accessible to anyone with link
-        // await drive.permissions.create({
-        //   fileId,
-        //   requestBody: {
-        //     role: "reader",
-        //     type: "anyone",
-        //   },
-        // });
-
-        // fileLink =
-        //   uploaded.data.webViewLink ||
-        //   `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+        fileLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       } catch (error) {
         fileLink = null;
         console.log(error);
