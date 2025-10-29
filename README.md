@@ -106,3 +106,48 @@ curl -X POST http://localhost:3000/api/zap \
 }
 ]
 }'
+
+Image message
+curl -X POST http://localhost:3000/api/zap \
+ -H "Content-Type: application/json" \
+ -d '{
+"object": "whatsapp_business_account",
+"entry": [
+{
+"id": "1163715615691396",
+"changes": [
+{
+"value": {
+"messaging_product": "whatsapp",
+"metadata": {
+"display_phone_number": "551151990251",
+"phone_number_id": "841926722336934"
+},
+"contacts": [
+{
+"profile": {
+"name": "Felipe Mammoli"
+},
+"wa_id": "5512991788976"
+}
+],
+"messages": [
+{
+"from": "5512991788976",
+"id": "wamid.HBgNNTUxMjk5MTc4ODk3NhUCABIYIEFDMDU1NzM3NjIwRjc4NkE5NzIyRjQ5OUVCNEE2MDJDAA==",
+"timestamp": "1761748101",
+"type": "image",
+"image": {
+"mime_type": "image/jpeg",
+"sha256": "Qr4bkM8cuW+UjdfLpMQ0Vd+Nl2nxMwSOGrV6iq3DCjc=",
+"id": "1355877182605393"
+}
+}
+]
+},
+"field": "messages"
+}
+]
+}
+]
+}'

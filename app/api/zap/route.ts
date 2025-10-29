@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const type = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.type;
   console.log(type);
 
-  if (type !== "text" || type !== "image") {
+  if (type !== "text" && type !== "image") {
     console.log("type is neighter text nor image: ", type);
     return NextResponse.json(
       {
