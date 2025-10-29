@@ -48,6 +48,7 @@ export async function parseImageMessage(imageId: string, from: string) {
     const imageResponse = await fetch(imageUrl, {
       headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
     });
+
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64ImageData = Buffer.from(imageBuffer).toString("base64");
     // 3. Process with Gemini
@@ -95,7 +96,9 @@ export async function parseImageMessage(imageId: string, from: string) {
     console.log(responseText);
     if (responseText) {
       const jsonData = await JSON.parse(responseText);
-      jsonData.imageArrayBuffer = imageResponse.arrayBuffer();
+      const r = await imageResponse.json();
+      console.log(r);
+      jsonData.imageResponse = imageResponse.arrayBuffer();
       return jsonData;
     } else {
       return null;

@@ -191,8 +191,8 @@ export async function POST(req: NextRequest) {
           }
         );
         console.log("trying to read the body");
-        const result = await driveUpload.json();
-        console.log(result);
+        const driveUploadResult = await driveUpload.json();
+        console.log(driveUploadResult);
 
         console.log("uploading with API");
 
