@@ -167,26 +167,30 @@ export async function POST(req: NextRequest) {
 
         console.log("uploading with rest api due to being on an edge server");
         const metadata = {
-          name: fileName || "whatsapp-image.jpg",
+          name: fileName,
           mimeType: "image/jpeg",
           parents: driveResponse.id ? [driveResponse.id] : undefined,
         };
-        const form = new FormData();
-        form.append(
+        const imgform = new FormData();
+        imgform.append(
           "metadata",
           new Blob([JSON.stringify(metadata)], { type: "application/json" })
         );
-        form.append("file", jsonData.base64ImageData);
+        imgform.append(
+          "file",
+          new Blob([jsonData.imageArrayBuffer], { type: "image/jpeg" })
+        );
 
+        console.log("fetch upload");
         const driveUpload = await fetch(
           "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
-            body: form,
+            body: imgform,
           }
         );
-
+        console.log("trying to read the body");
         const result = await driveUpload.json();
         console.log(result);
 
