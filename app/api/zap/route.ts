@@ -165,14 +165,6 @@ export async function POST(req: NextRequest) {
         // upload file
         const fileName = `recibo_${matchedUser.id}_${Date.now()}.jpg`;
 
-        console.log("stringpping base64 string");
-        const base64Data = jsonData.base64ImageData.replace(
-          /^data:image\/jpeg;base64,/,
-          ""
-        );
-        console.log("decoding from base64");
-        const buffer = Buffer.from(base64Data, "base64");
-
         console.log("uploading");
         const uploaded = await drive.files.create({
           requestBody: {
@@ -181,7 +173,7 @@ export async function POST(req: NextRequest) {
           },
           media: {
             mimeType: "image/jpeg",
-            body: buffer,
+            body: jsonData.base64ImageData,
           },
           fields: "id, webViewLink, webContentLink",
         });
