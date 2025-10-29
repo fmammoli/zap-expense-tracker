@@ -37,15 +37,22 @@ export async function POST(req: NextRequest) {
 
   const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
   if (type !== "text" || type !== "image") {
-    return new NextResponse(
-      `Cannot process message type: ${type}, can only process text or image`,
+    return NextResponse.json(
+      {
+        error: `Cannot process message type: ${type}, can only process text or image`,
+      },
       { status: 400 }
     );
   }
 
   if (!from) {
     console.log("No 'from' field found in the message.");
-    return new NextResponse(null, { status: 200 });
+    return NextResponse.json(
+      { error: "No from field found in the message" },
+      {
+        status: 200,
+      }
+    );
   }
 
   // Query Clerk for user with matching whatsappNumber in public metadata
