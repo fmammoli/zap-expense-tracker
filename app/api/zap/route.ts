@@ -160,15 +160,20 @@ export async function POST(req: NextRequest) {
       try {
         //create a crococontaRecibos folder is it doesnet exist
         // upload base64 image to Drive folder "crococontaRecibos" and get link
-
+        console.log("saving on drive");
         const driveResponse = await getOrCreateFolder(drive);
         // upload file
         const fileName = `recibo_${matchedUser.id}_${Date.now()}.jpg`;
+
+        console.log("stringpping base64 string");
         const base64Data = jsonData.base64ImageData.replace(
           /^data:image\/jpeg;base64,/,
           ""
         );
+        console.log("decoding from base64");
         const buffer = Buffer.from(base64Data, "base64");
+
+        console.log("uploading");
         const uploaded = await drive.files.create({
           requestBody: {
             name: fileName,
