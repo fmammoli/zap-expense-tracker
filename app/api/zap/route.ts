@@ -165,32 +165,58 @@ export async function POST(req: NextRequest) {
         // upload file
         const fileName = `recibo_${matchedUser.id}_${Date.now()}.jpg`;
 
-        console.log("uploading");
-        const uploaded = await drive.files.create({
-          requestBody: {
-            name: fileName,
-            parents: driveResponse.id ? [driveResponse.id] : undefined,
-          },
-          media: {
-            mimeType: "image/jpeg",
-            body: jsonData.base64ImageData,
-          },
-          fields: "id, webViewLink, webContentLink",
-        });
+        console.log("uploading with rest api due to being on an edge server");
+        const metadata = {
+          name: fileName || "whatsapp-image.jpg",
+          mimeType: "image/jpeg",
+          parents: driveResponse.id ? [driveResponse.id] : undefined,
+        };
+        const form = new FormData();
+        form.append(
+          "metadata",
+          new Blob([JSON.stringify(metadata)], { type: "application/json" })
+        );
+        form.append("file", jsonData.base64ImageData);
 
-        const fileId = uploaded.data.id!;
-        // make file accessible to anyone with link
-        await drive.permissions.create({
-          fileId,
-          requestBody: {
-            role: "reader",
-            type: "anyone",
-          },
-        });
+        const driveUpload = await fetch(
+          "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+          }
+        );
 
-        fileLink =
-          uploaded.data.webViewLink ||
-          `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+        const result = await driveUpload.json();
+        console.log(result);
+
+        console.log("uploading with API");
+
+        // const uploaded = await drive.files.create({
+        //   requestBody: {
+        //     name: fileName,
+        //     parents: driveResponse.id ? [driveResponse.id] : undefined,
+        //   },
+        //   media: {
+        //     mimeType: "image/jpeg",
+        //     body: jsonData.base64ImageData,
+        //   },
+        //   fields: "id, webViewLink, webContentLink",
+        // });
+
+        // const fileId = uploaded.data.id!;
+        // // make file accessible to anyone with link
+        // await drive.permissions.create({
+        //   fileId,
+        //   requestBody: {
+        //     role: "reader",
+        //     type: "anyone",
+        //   },
+        // });
+
+        // fileLink =
+        //   uploaded.data.webViewLink ||
+        //   `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       } catch (error) {
         fileLink = null;
         console.log(error);
