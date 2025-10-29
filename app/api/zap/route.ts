@@ -1,6 +1,6 @@
 import { clerkClient, User } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
-import { google, type sheets_v4 } from "googleapis";
+import { drive_v3, google, type sheets_v4 } from "googleapis";
 import { summarizeUserExpenses } from "./summerizeUserExpenses";
 import sendMessage from "./sendMessage";
 import checkIfNumberMatches from "./check-if-wa-numbers-matches";
@@ -8,6 +8,7 @@ import parseExpenseReportRequestWithGemini from "./parse-expense-report-request-
 import parseMessageTypeWithGemini from "./parse-message-type-with-gemini";
 import parseNewRegisterWithGemini from "./parse-new-register-with-gemini";
 import { parseImageMessage } from "./parse-image-message";
+import { getOrCreateFolder } from "./get-or-create-folder";
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get("hub.mode");
@@ -122,11 +123,16 @@ export async function POST(req: NextRequest) {
   }
 
   let sheets: sheets_v4.Sheets | null = null;
+  let drive: drive_v3.Drive | null = null;
   try {
     const googleAuthClient = new google.auth.OAuth2();
     googleAuthClient.setCredentials({ access_token: token });
     sheets = google.sheets({
       version: "v4",
+      auth: googleAuthClient,
+    });
+    drive = google.drive({
+      version: "v3",
       auth: googleAuthClient,
     });
   } catch (err) {
@@ -150,27 +156,79 @@ export async function POST(req: NextRequest) {
       body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.image.id;
     const jsonData = await parseImageMessage(imageId, from);
     if (jsonData) {
-      // Format the response message with emoji and markdown
-      // Save to spreadsheet first
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: matchedUser.publicMetadata.sheetId as string,
-        range: `Extrato!A1:H1`,
-        valueInputOption: "RAW",
-        requestBody: {
-          values: [
-            [
-              new Date(jsonData.data).toLocaleDateString("pt-BR"),
-              jsonData.valor,
-              "despesa",
-              `${matchedUser.firstName} ${matchedUser.lastName}`,
-              jsonData.categoria,
-              jsonData.descricao,
-              jsonData.forma_pagamento,
-              jsonData.observacoes,
+      let fileLink: string | null = null;
+      try {
+        //create a crococontaRecibos folder is it doesnet exist
+        // upload base64 image to Drive folder "crococontaRecibos" and get link
+
+        const driveResponse = await getOrCreateFolder(drive);
+        // upload file
+        const fileName = `recibo_${matchedUser.id}_${Date.now()}.jpg`;
+        const uploaded = await drive.files.create({
+          requestBody: {
+            name: fileName,
+            parents: driveResponse.id ? [driveResponse.id] : undefined,
+          },
+          media: {
+            mimeType: "image/jpeg",
+            body: jsonData.base64ImageData,
+          },
+          fields: "id, webViewLink, webContentLink",
+        });
+
+        const fileId = uploaded.data.id!;
+        // make file accessible to anyone with link
+        await drive.permissions.create({
+          fileId,
+          requestBody: {
+            role: "reader",
+            type: "anyone",
+          },
+        });
+
+        fileLink =
+          uploaded.data.webViewLink ||
+          `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      } catch (error) {
+        fileLink = null;
+        return NextResponse.json(
+          { error: `Error saving image on drive: ${error}` },
+          { status: 500 }
+        );
+      }
+
+      try {
+        // append link to observações and save to sheet
+        const observacoesWithLink = `${jsonData.observacoes || ""}${
+          fileLink ? `\nComprovante: ${fileLink}` : ""
+        }`;
+        // Save to spreadsheet first
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: matchedUser.publicMetadata.sheetId as string,
+          range: `Extrato!A1:H1`,
+          valueInputOption: "RAW",
+          requestBody: {
+            values: [
+              [
+                new Date(jsonData.data).toLocaleDateString("pt-BR"),
+                jsonData.valor,
+                "despesa",
+                `${matchedUser.firstName} ${matchedUser.lastName}`,
+                jsonData.categoria,
+                jsonData.descricao,
+                jsonData.forma_pagamento,
+                observacoesWithLink,
+              ],
             ],
-          ],
-        },
-      });
+          },
+        });
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Error saving new data on sheet: ${error}` },
+          { status: 500 }
+        );
+      }
+      // Format the response message with emoji and markdown
 
       const responseMessage = `
 📸 *Recibo Processado com Sucesso!* 
