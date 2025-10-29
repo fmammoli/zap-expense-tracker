@@ -45,7 +45,9 @@ export async function parseImageMessage(imageId: string, from: string) {
     const imageUrl = await getWhatsAppMedia(imageId);
     console.log(`WA Image url: ${imageUrl}`);
     // 2. Download image
-    const imageResponse = await fetch(imageUrl);
+    const imageResponse = await fetch(imageUrl, {
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+    });
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64ImageData = Buffer.from(imageBuffer).toString("base64");
     // 3. Process with Gemini
