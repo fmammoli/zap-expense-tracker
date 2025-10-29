@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
   if (type === "image") {
     const imageId =
       body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.image.id;
-    const jsonData = await parseImageMessage(imageId, from);
+    const jsonData = await parseImageMessage(imageId);
     if (jsonData) {
       let fileLink: string | null = null;
       try {
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
         );
         imgform.append(
           "file",
-          new Blob([jsonData.imageArrayBuffer], { type: "image/jpeg" })
+          new Blob([jsonData.imageResponse], { type: "image/jpeg" })
         );
 
         console.log("fetch upload");

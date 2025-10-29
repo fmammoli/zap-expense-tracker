@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import sendMessage from "./sendMessage";
 import { GoogleGenAI, Type } from "@google/genai";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -35,7 +34,7 @@ Regras:
 - Se a imagem estiver muito ruim para identificar as informações, returne null.
 `;
 
-export async function parseImageMessage(imageId: string, from: string) {
+export async function parseImageMessage(imageId: string) {
   try {
     if (!GEMINI_API_KEY) {
       return;
@@ -96,9 +95,7 @@ export async function parseImageMessage(imageId: string, from: string) {
     console.log(responseText);
     if (responseText) {
       const jsonData = await JSON.parse(responseText);
-      const r = await imageResponse.json();
-      console.log(r);
-      jsonData.imageResponse = imageResponse.arrayBuffer();
+      jsonData.imageResponse = imageBuffer;
       return jsonData;
     } else {
       return null;
@@ -124,5 +121,6 @@ async function getWhatsAppMedia(mediaId: string) {
   });
 
   const data = await response.json();
+  console.log(`GRaph api response: ${data}`);
   return data.url;
 }
