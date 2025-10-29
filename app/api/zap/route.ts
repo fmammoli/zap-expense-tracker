@@ -405,11 +405,19 @@ Quer ver o extrato completo? É só me pedir!
 `;
 
       await sendMessage(from, bodyText);
+      return NextResponse.json(
+        { message: "New data saved on sheet" },
+        { status: 200 }
+      );
     } catch (err) {
       console.error("Erro registrando gasto:", err);
       await sendMessage(
         from,
         "⚠️ Ocorreu um erro ao registrar seu gasto. Tente novamente!"
+      );
+      return NextResponse.json(
+        { message: `An error ocurred when saving you data: ${err}` },
+        { status: 500 }
       );
     }
 
