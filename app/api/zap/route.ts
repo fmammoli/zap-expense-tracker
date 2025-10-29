@@ -1,11 +1,12 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { google, type sheets_v4 } from "googleapis";
-import { GoogleGenAI, Type } from "@google/genai";
 import { summarizeUserExpenses } from "./summerizeUserExpenses";
 import sendMessage from "./sendMessage";
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+import checkIfNumberMatches from "./check-if-wa-numbers-matches";
+import parseExpenseReportRequestWithGemini from "./parse-expense-report-request-with-gemini";
+import parseMessageTypeWithGemini from "./parse-message-type-with-gemini";
+import parseNewRegisterWithGemini from "./parse-new-register-with-gemini";
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get("hub.mode");
@@ -24,41 +25,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function checkIfNumberMatches(clerkNumber: string, waNumber: string) {
-  const normalizedClerkNumber = clerkNumber.replace("+", "");
-  const normalizedWaNumber = waNumber.replace("+", "");
-
-  if (normalizedClerkNumber === normalizedWaNumber) {
-    return true;
-  }
-
-  if (normalizedClerkNumber.length > normalizedWaNumber.length) {
-    const adjustedWaNumber = `${normalizedClerkNumber.slice(
-      0,
-      4
-    )}${normalizedClerkNumber.slice(5)}`;
-    if (adjustedWaNumber === normalizedWaNumber) {
-      return true;
-    }
-  }
-  if (normalizedClerkNumber.length < normalizedWaNumber.length) {
-    const adjustedWaNumber = `${normalizedWaNumber.slice(
-      0,
-      4
-    )}${normalizedWaNumber.slice(5)}`;
-    if (adjustedWaNumber === normalizedClerkNumber) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
   const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
   console.log(`\n\nWebhook received: ${timestamp}\n`);
   console.log(JSON.stringify(body, null, 2));
+
+  const type = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.type;
 
   const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
   const messageBody =
@@ -78,7 +52,9 @@ export async function POST(req: NextRequest) {
       limit: 100, // adjust as needed
     });
     matchedUser = users.data.find((user) => {
-      console.log(`Checking `);
+      console.log(
+        `Checking: ${user.publicMetadata.whatsappNumber} and ${from}`
+      );
 
       const res = checkIfNumberMatches(
         user.publicMetadata.whatsappNumber as string,
@@ -290,219 +266,4 @@ Quer ver o extrato completo? É só me pedir!
     return new NextResponse(null, { status: 200 });
   }
   return new NextResponse(null, { status: 200 });
-}
-
-const expenseReportSystemPrompt = `
-Você é um assistente financeiro pessoal que ajuda o usuário com relatório de despesas mensais.
-Sua tarefa é identificar o mês e ano na mensagem do usuário e gerar um resumo das despesas daquele período.
-
-Regras
-- Entrada: uma mensagem em linguagem natural (ex.: "Quanto eu gastei em março de 2023?", "Me mostre meu relatório de despesas para o último mês").
-- Se a mensagem não especificar o ano, retorne 2025.
-- Se a mensagem dizer "esse mês" ou "último mês" retorne null.
-- Se a mensagem dizer "mês passado" retorne -1 e se a mensagem disser "dois meses atrás" retorne -2 e assim por diante
-- Saída: JSON com os seguintes campos:
-
-{
-  "mes": number | null,  
-  "ano": number | null   
-}
-`;
-
-async function parseExpenseReportRequestWithGemini(message: string) {
-  if (!GEMINI_API_KEY) {
-    return;
-  }
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-lite",
-    contents: message,
-    config: {
-      systemInstruction: expenseReportSystemPrompt,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          mes: { type: Type.NUMBER },
-          ano: { type: Type.NUMBER },
-        },
-        required: ["mes", "ano"],
-      },
-    },
-  });
-  console.log("!!!!!!!!!!LLM RESPONSE!!!!!!!!!!");
-  const responseText = response.candidates?.[0].content?.parts?.[0].text;
-  console.log(responseText);
-  if (responseText) {
-    const jsonData = await JSON.parse(responseText);
-    return jsonData;
-  } else {
-    return null;
-  }
-}
-const systemSwitchPrompt = `
-Você é um analisador de transações financeiras pessoais.
-Sua tarefa é enquadrar a mensagem do usuário em um desses 4 tipo: 
-1. Ajuda
-2. Registrar Despesa
-3. Registrar Receita
-4. Relatório de Gastos
-
-- Entrada: uma mensagem em linguagem natural (ex.: "Como funciona?", "Uber 23,50", "Salário 5000", "Quanto eu gastei no último mês?").
-- Saída: JSON com os seguintes campos:
-
-{
-  "tipo": "ajuda" | "registrar_despesa" | "registrar_receita" | "relatorio" | null
-}
-`;
-
-async function parseMessageTypeWithGemini(message: string) {
-  if (!GEMINI_API_KEY) {
-    return;
-  }
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-lite",
-    contents: message,
-    config: {
-      systemInstruction: systemSwitchPrompt,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          tipo: { type: Type.STRING },
-        },
-        required: ["tipo"],
-      },
-    },
-  });
-  console.log("!!!!!!!!!!LLM RESPONSE!!!!!!!!!!");
-  const responseText = response.candidates?.[0].content?.parts?.[0].text;
-  console.log(responseText);
-  if (responseText) {
-    const jsonData = await JSON.parse(responseText);
-    return jsonData;
-  } else {
-    return null;
-  }
-}
-
-const systemPrompt = `
-Você é um analisador de transações financeiras pessoais.  
-Sua tarefa é extrair dados estruturados de mensagens curtas do WhatsApp sobre finanças.  
-
-Entrada:
-Uma mensagem em linguagem natural, por exemplo:  
-- "Almoço 10 reais"  
-- "Jantar 20 cartão Nubank"  
-- "Uber 25 débito"  
-- "Recebi 300 do João"  
-- "Pix mercado 85"  
-
-Saída:
-Retorne somente JSON válido, no formato:
-
-{
-  "data": "YYYY-MM-DD" | null,
-  "descricao": string | null,
-  "categoria": string | null,
-  "forma_pagamento": string | null,
-  "valor": number | null,
-  "tipo": "despesa" | "receita" | null,
-  "observacoes": string | null
-}
-
-Regras:
-1. Tipo:
-   - Se for gasto, use "despesa".
-   - Se for entrada (ex.: recebi, salário, venda), use "receita".
-   - Caso não indique claramente, use null.
-
-2. Data:
-   - Se a mensagem contiver uma data explícita (ex.: "ontem", "15/10"), converter para formato ISO YYYY-MM-DD.
-   - Caso não haja data, retornar null.
-
-3. Valor:
-   - Extrair número, convertendo vírgulas em pontos (ex.: "10,50" → 10.50).
-   - Se não houver valor explícito, retornar null.
-
-4. Moeda:
-   - Se não houver especificação, assumir "BRL". (pode ser omitido se não for essencial)
-
-5. Categoria (despesas):
-   - alimentação (almoço, jantar, lanche, café, mercado)
-   - transporte (uber, gasolina, passagem, estacionamento)
-   - compras (roupas, eletrônicos, supermercado)
-   - entretenimento (cinema, show, netflix)
-   - aluguel
-   - contas (energia, internet, telefone, água)
-   - saúde (farmácia, consulta)
-   - educação (curso, mensalidade)
-   - outros
-
-   Categoria (receitas):
-   - salário
-   - presente
-   - reembolso
-   - investimento
-   - outros
-
-6. Forma de pagamento:
-   - Detectar se houver menção (ex.: "pix", "cartão nubank", "crédito", "débito", "dinheiro").
-   - Se não houver, retornar null.
-
-7. Observações:
-   - Guardar qualquer informação adicional que não se encaixe nos campos acima (ex.: nomes de pessoas, lugares, comentários).
-
-8. Importante:
-   - Retorne somente o JSON, sem texto explicativo.
-   - Preencha null para campos ausentes.
-`;
-
-async function parseNewRegisterWithGemini(message: string) {
-  if (!GEMINI_API_KEY) {
-    return;
-  }
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-lite",
-    contents: message,
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          data: { type: Type.STRING },
-          descricao: { type: Type.STRING },
-          categoria: { type: Type.STRING },
-          forma_pagamento: { type: Type.STRING },
-          valor: { type: Type.NUMBER },
-          tipo: { type: Type.STRING },
-          observacoes: { type: Type.STRING },
-        },
-        required: [
-          "data",
-          "descricao",
-          "categoria",
-          "forma_pagamento",
-          "valor",
-          "tipo",
-          "observacoes",
-        ],
-      },
-    },
-  });
-  console.log("!!!!!!!!!!LLM RESPONSE!!!!!!!!!!");
-  const responseText = response.candidates?.[0].content?.parts?.[0].text;
-  console.log(responseText);
-  if (responseText) {
-    const jsonData = await JSON.parse(responseText);
-    return jsonData;
-  } else {
-    return null;
-  }
 }
