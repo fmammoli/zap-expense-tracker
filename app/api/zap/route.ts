@@ -1,4 +1,4 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, User } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { google, type sheets_v4 } from "googleapis";
 import { summarizeUserExpenses } from "./summerizeUserExpenses";
@@ -7,6 +7,7 @@ import checkIfNumberMatches from "./check-if-wa-numbers-matches";
 import parseExpenseReportRequestWithGemini from "./parse-expense-report-request-with-gemini";
 import parseMessageTypeWithGemini from "./parse-message-type-with-gemini";
 import parseNewRegisterWithGemini from "./parse-new-register-with-gemini";
+import { parseImageMessage } from "./parse-image-message";
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get("hub.mode");
@@ -35,6 +36,12 @@ export async function POST(req: NextRequest) {
   const type = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.type;
 
   const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+  if (type !== "text" || type !== "image") {
+    return new NextResponse(
+      `Cannot process message type: ${type}, can only process text or image`,
+      { status: 400 }
+    );
+  }
   const messageBody =
     body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
 
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Query Clerk for user with matching whatsappNumber in public metadata
-  let matchedUser = null;
+  let matchedUser: null | undefined | User = null;
   let token = null;
   try {
     const client = await clerkClient();
@@ -131,9 +138,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // if(type === "image"){
-  //   parseImageMessage();
-  // }
+  if (type === "image") {
+    //const response = parseImageMessage();
+  }
 
   //Parse the type of text message message
   const typeSwitch = await parseMessageTypeWithGemini(messageBody);
