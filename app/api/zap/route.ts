@@ -34,17 +34,19 @@ export async function POST(req: NextRequest) {
   console.log(JSON.stringify(body, null, 2));
 
   const type = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.type;
+  console.log(type);
 
-  const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
   if (type !== "text" || type !== "image") {
+    console.log("type is neighter text nor image: ", type);
     return NextResponse.json(
       {
         error: `Cannot process message type: ${type}, can only process text or image`,
       },
-      { status: 400 }
+      { status: 200 }
     );
   }
 
+  const from = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
   if (!from) {
     console.log("No 'from' field found in the message.");
     return NextResponse.json(
