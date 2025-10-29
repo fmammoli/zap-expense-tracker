@@ -53,14 +53,15 @@ export async function POST(req: NextRequest) {
     });
     matchedUser = users.data.find((user) => {
       console.log(
-        `Checking: ${user.publicMetadata.whatsappNumber} and ${from}`
+        `Checking: ${JSON.stringify(user.publicMetadata, null, 2)} and ${from}`
       );
-
-      const res = checkIfNumberMatches(
-        user.publicMetadata.whatsappNumber as string,
-        from
-      );
-      return res;
+      if (user.publicMetadata.whatsappNumber && from) {
+        const res = checkIfNumberMatches(
+          user.publicMetadata.whatsappNumber as string,
+          from
+        );
+        return res;
+      }
     });
     if (!matchedUser) {
       console.log(`No user found with this WhatsApp number: ${from}`);
@@ -130,6 +131,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // if(type === "image"){
+  //   parseImageMessage();
+  // }
+
+  //Parse the type of text message message
   const typeSwitch = await parseMessageTypeWithGemini(messageBody);
   console.log(typeSwitch);
 
