@@ -100,49 +100,6 @@ export async function parseImageMessage(
     } else {
       return null;
     }
-
-    // 4. Save to spreadsheet
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: matchedUser.publicMetadata.sheetId as string,
-      range: `Extrato!A1:H1`,
-      valueInputOption: "RAW",
-      requestBody: {
-        values: [
-          [
-            new Date(llmResponse.data).toLocaleDateString("pt-BR"),
-            llmResponse.valor,
-            "despesa",
-            `${matchedUser.firstName} ${matchedUser.lastName}`,
-            llmResponse.categoria,
-            llmResponse.descricao,
-            llmResponse.forma_pagamento,
-            llmResponse.observacoes,
-          ],
-        ],
-      },
-    });
-
-    // 5. Send confirmation
-    const bodyText = `
-📸 *Recibo processado com sucesso!* 🎉
-
-👤 *Quem:* ${matchedUser.firstName} ${matchedUser.lastName}
-📆 *Data:* ${new Date(llmResponse.data).toLocaleDateString("pt-BR")}
-🏪 *Estabelecimento:* ${llmResponse.descricao}
-💰 *Valor:* R$ ${Number(llmResponse.valor).toFixed(2)}
-🏷️ *Categoria:* ${llmResponse.categoria}
-${
-  llmResponse.forma_pagamento
-    ? `💳 *Pagamento:* ${llmResponse.forma_pagamento}\n`
-    : ""
-}
-📝 *Detalhes:* ${llmResponse.observacoes}
-
-✅ Registrado para reembolso!
-`;
-
-    await sendMessage(from, bodyText);
-    return new NextResponse(null, { status: 200 });
   } catch (error) {
     console.error("Error processing receipt:", error);
     await sendMessage(

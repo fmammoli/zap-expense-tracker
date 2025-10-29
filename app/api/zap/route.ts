@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
   const messageBody =
     body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text.body;
 
