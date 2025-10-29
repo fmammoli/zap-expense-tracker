@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       console.log(`No user found with this WhatsApp number: ${from}`);
       return NextResponse.json(
         { error: `No user found with this WhatsApp number: ${from}` },
-        { status: 404 }
+        { status: 200 }
       );
     }
     console.log(
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     );
     return NextResponse.json(
       { error: "No Google OAuth token found" },
-      { status: 403 }
+      { status: 200 }
     );
   }
 
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
           },
           media: {
             mimeType: "image/jpeg",
-            body: Buffer.from(jsonData.base64ImageData, "base64"),
+            body: jsonData.base64ImageData,
           },
           fields: "id, webViewLink, webContentLink",
         });
@@ -257,7 +257,7 @@ ${
         { status: 200 }
       );
     } else {
-      console.error("Was not able to process the script.");
+      console.error("Was not able to process the receipt.");
       await sendMessage(
         from,
         "❌ Não consegui processar este recibo. Por favor, envie uma foto mais clara ou digite as informações manualmente."

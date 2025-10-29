@@ -95,7 +95,7 @@ export async function parseImageMessage(imageId: string, from: string) {
     console.log(responseText);
     if (responseText) {
       const jsonData = await JSON.parse(responseText);
-      jsonData.base64ImageData = base64ImageData;
+      jsonData.base64ImageData = imageBuffer;
       return jsonData;
     } else {
       return null;
