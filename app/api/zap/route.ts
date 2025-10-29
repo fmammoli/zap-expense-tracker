@@ -194,6 +194,10 @@ ${
 `;
 
       await sendMessage(from, responseMessage);
+      return NextResponse.json(
+        { message: "Receipt saved sucessifully" },
+        { status: 200 }
+      );
     } else {
       console.error("Was not able to process the script.");
       await sendMessage(
@@ -202,7 +206,6 @@ ${
       );
       return new NextResponse(null, { status: 200 });
     }
-    console.log(jsonData);
   }
 
   const messageBody =
